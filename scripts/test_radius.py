@@ -44,12 +44,18 @@ def main():
         write_secret(secret_dir / "radius_clients", "\n".join(clients))
         env = dict(os.environ, INTEGRATION_DIR=secret_dir.as_posix(), INTEGRATION_APP_IMAGE="netloom-app:radius-test")
         command = ["docker", "compose", "--env-file", str(ROOT / "image-lock.env"), "-f", str(ROOT / "compose.integration.yml"), "-p", project]
+        sensitive = list(data.values()) + [p.read_text().strip() for p in secret_dir.iterdir() if p.name not in {"radius_clients", "radius_integration_data"}]
+        last_packet_output = ""
+
+        def redact(output):
+            for value in sensitive:
+                output = output.replace(value, "[redacted]")
+            return re.sub(r"(?im)^.*(?:User-Password|Cleartext-Password|PBKDF2-Password|pap_password|password_hash|\bsecret\s*=|\bpassword\s*=).*$", "[credential line omitted]", output)
 
         def compose(*arguments, input=None, timeout=180, checked=True):
             result = subprocess.run(command + list(arguments), cwd=ROOT, env=env, input=input, text=True, capture_output=True, timeout=timeout)
             if checked and result.returncode:
-                # Raw output can contain secrets from packet dumps or failed SQL.
-                raise RuntimeError(f"Compose {' '.join(arguments[:3])} failed (exit {result.returncode}); project {project}")
+                raise RuntimeError(f"Compose {' '.join(arguments[:3])} failed (exit {result.returncode}); project {project}\n" + redact(result.stderr[-12000:]))
             return result
 
         def db_query(user, secret_name, sql, *, allowed=True):
@@ -62,6 +68,7 @@ def main():
             return result.stdout.strip()
 
         def packet(source=2, username="same-user", password=None, *, expected="Access-Accept", rate=None, extra="", method="pap", authenticator=True):
+            nonlocal last_packet_output
             secret_file = "integration_secret_b" if source == 3 else "integration_secret_a"
             attrs = [f'User-Name = "{username}"', f"Packet-Src-IP-Address = 127.0.0.{source}"]
             if method == "pap":
@@ -77,6 +84,7 @@ def main():
                 attrs.append(extra)
             result = compose("exec", "-T", "radius", "radclient", "-x", "-r", "1", "-t", "3", "-S", f"/run/secrets/{secret_file}", "127.0.0.1:1812", "auth", input="\n".join(attrs) + "\n", timeout=15, checked=False)
             output = result.stdout + result.stderr
+            last_packet_output = redact(output)
             responses = re.findall(r"Received (Access-Accept|Access-Reject|Access-Challenge)\b", output)
             if expected == "timeout":
                 valid = not responses and "No reply from server" in output
@@ -151,6 +159,12 @@ def main():
             packet(source=3, password=data["password_b"], expected="Access-Reject")
             print("PASS: suspension isolation and database outage fail closed", flush=True)
             print("RADIUS SQL/PAP integration checks passed. These are synthetic packets, not PPPoE sessions.", flush=True)
+        except Exception:
+            print("Integration failed; credential-redacted diagnostics follow:", flush=True)
+            print(last_packet_output, flush=True)
+            logs = compose("logs", "--no-color", "--tail", "100", "db", "migrate", "seed", "radius", checked=False)
+            print(redact(logs.stdout + logs.stderr), flush=True)
+            raise
         finally:
             # The random project owns only disposable resources created above.
             compose("down", "--volumes", "--remove-orphans", checked=True)
