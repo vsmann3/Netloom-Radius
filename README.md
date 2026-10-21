@@ -6,12 +6,14 @@ Multi-tenant ISP authentication and subscriber management, starting with our own
 
 The first application foundation is implemented: tenant-aware Django models,
 membership-based management access, suspension auditing/outbox, migrations and a
-pinned Docker Compose lab configuration. All 20 application/SQL tests pass against
+pinned Docker Compose lab configuration. All 21 application/SQL tests pass against
 MariaDB 11.8.9, including database tenant constraints and restricted-grant checks.
 FreeRADIUS uses its stock SQL and PAP modules with tenant-qualified authorization
 and a read-only database account. A disposable packet-test harness is included.
-Container builds, FreeRADIUS startup and MikroTik acceptance still need Linux
-validation. Accounting writes and Disconnect dispatch remain pending.
+Linux CI has passed container startup and synthetic RADIUS authentication,
+tenant-isolation, rejection and database-outage checks. The separate staging VM
+and real MikroTik acceptance still need validation. Accounting writes and
+Disconnect dispatch remain pending.
 
 ## Agreed foundation
 

@@ -33,15 +33,15 @@ The management foundation, schema migrations, tenant ownership constraints,
 suspension transaction/outbox and Compose/runbook files are implemented.
 Sixteen local SQLite application tests pass, including direct cross-tenant
 writes, authorization, CSRF, audited password provisioning, client rendering and
-transactional rollback. Four additional MariaDB-only tests check the SQL view.
+transactional rollback. Five additional MariaDB-only tests check the SQL view and deployed driver queries.
 FreeRADIUS SQL/PAP configuration and separate database roles are implemented;
 the disposable packet harness exercises actual upstream `radclient` requests
-once run on Linux. Local application checks are not PPPoE sessions.
+on Linux. These automated packet checks are not PPPoE sessions.
 
-All 20 application/SQL tests passed on a portable MariaDB 11.8.9 instance, and
-separate probes confirmed restricted database grants. No full acceptance check
-above is complete. Docker is unavailable on the Windows host. Container builds,
-FreeRADIUS validation, live AAA/accounting/Disconnect, recovery and capacity
-measurement await Ubuntu validation and remaining accounting/dispatcher work.
+All 21 application/SQL tests and the synthetic FreeRADIUS packet suite passed
+on GitHub's Ubuntu runner with the pinned images. This validates configuration,
+authentication, isolation and restricted grants in CI. Milestone 1 is not complete:
+actual VM deployment, real MikroTik PPPoE, accounting/Disconnect, recovery and
+capacity measurement remain pending.
 See [development status](development.md) and the
 [deployment runbook](lab-deployment.md).

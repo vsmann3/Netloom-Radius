@@ -25,7 +25,7 @@ python -m venv .venv
 ./.venv/Scripts/python.exe manage.py makemigrations --check --dry-run --settings=netloom.test_settings
 ```
 
-On Linux use `.venv/bin/python`. Test settings select SQLite and a fast hasher for management fixtures; PAP-specific commands explicitly use PBKDF2. Four authorization-view tests run only against MariaDB and are skipped on SQLite. All 20 tests passed against a checksum-verified portable MariaDB 11.8.9 on Windows; service-grant denials were also checked. Container startup and actual FreeRADIUS packets remain untested until Linux validation. Never use test settings for a deployment.
+On Linux use `.venv/bin/python`. Test settings select SQLite and a fast hasher for management fixtures; PAP-specific commands explicitly use PBKDF2. Five SQL-specific tests run only against MariaDB and are skipped on SQLite. All 21 tests and the synthetic upstream `radclient` packet suite passed on GitHub's Ubuntu runner with pinned container images. [First passing integration run](https://github.com/vsmann3/Netloom-Radius/actions/runs/39641740749). Target-VM and real MikroTik validation remain pending. Never use test settings for a deployment.
 
 ## Disposable SQL/PAP packet checks
 
@@ -35,7 +35,7 @@ On the Ubuntu VM with Docker Engine and Compose:
 sudo python3 scripts/test_radius.py
 ```
 
-This creates a random Compose project, fresh database volume and temporary generated credentials. It publishes no host ports and does not use the lab's normal volume or secrets. Its `finally` block removes only that disposable project's resources. It builds `netloom-app:radius-test`; `--skip-build` reuses that image after a successful build. Raw packet dumps and command output are suppressed because they may contain credentials.
+This creates a random Compose project, fresh database volume and temporary generated credentials. It publishes no host ports and does not use the lab's normal volume or secrets. Its `finally` block removes only that disposable project's resources. It builds `netloom-app:radius-test`; `--skip-build` reuses that image after a successful build. Failure diagnostics redact generated secrets and credential attributes before printing. The normal VM startup command validates configuration before serving; customer authentication does not run with debug logging enabled.
 
 Checks use upstream `radclient`: same-name subscribers in two tenants with different passwords/plans; wrong passwords; unknown/case-mismatched users; suspended, expired and unusable credentials; disabled NAS/tenants; NAS-IP-Address spoofing; unsupported methods; missing Message-Authenticator; unknown clients; database privilege denials; Django tests on MariaDB; suspension isolation; and database outage. These are synthetic RADIUS packets, not PPPoE sessions or a capacity benchmark.
 
@@ -44,6 +44,13 @@ Checks use upstream `radclient`: same-name subscribers in two tenants with diffe
 Use a single canonical subscriber spelling. MariaDB reserves case variants within a tenant; the SQL query additionally requires exact spelling. Usernames in separate tenants may match.
 
 Only PAP is enabled. Current credentials are PBKDF2-SHA256 with a 1–32 character alphanumeric salt and 100,000–2,000,000 iterations. Provisioning uses Django's default work factor. Unsupported/malformed hashes are excluded from the authorization view. No plaintext-equivalent credential is stored for CHAP/MSCHAP. SQL uses FreeRADIUS's trusted Packet-Src-IP-Address, never a subscriber-selected tenant, NAS-Identifier or NAS-IP-Address. No default tenant is permitted.
+
+SQL supplies the hash through upstream PAP's preferred `Password-With-Header`
+normalization using `{X-PBKDF2}`. This sets PAP's authentication type through the
+existing module without custom password verification. Reply-query UNION values
+use an explicit UTF-8 collation so the driver's connection collation cannot cause
+authentication to fail; a regression test executes the deployed queries under
+both Latin-1 and UTF-8 client settings.
 
 NAS secrets are external file references, not database values. Rendering requires unique 64-character lowercase hex secrets, validates addresses/references and blocks directory traversal. Clients require Message-Authenticator; verify RouterOS compatibility before live use. Disabled NAS records immediately lose SQL authorization even if an older client entry remains loaded. Client additions and secret rotations require a validated restart. The initial loopback probe has no NAS registration and cannot authenticate.
 

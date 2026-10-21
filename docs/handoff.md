@@ -10,28 +10,32 @@ has been performed. Details are in `docs/deployment-target.md`.
 ## Completed
 
 - Built the first Django management/data foundation, migrations and tenant foreign keys.
-- Added 20 application/SQL tests covering isolation, authorization, CSRF, password provisioning, client rendering, SQL policy and outbox rollback.
+- Added 21 application/SQL tests covering isolation, authorization, CSRF, password provisioning, client rendering, SQL policy/driver collations and outbox rollback.
 - Added pinned Python dependencies and registry-resolved immutable image digests.
-- Added Compose, Debian preparation, secret initialization, backup and lab runbook.
+- Added Compose, Ubuntu/Debian preparation, secret initialization, backup and GitHub-to-staging deployment runbook.
 - Replaced the baseline with upstream FreeRADIUS SQL/PAP configuration, a tenant-qualified authorization view and separate database accounts. Removed the temporary Python password verifier.
 - Added audited hidden-prompt subscriber password provisioning and a NAS client renderer backed by external unique secrets.
 - Added a disposable Compose/`radclient` packet harness; it publishes no host ports.
 
 ## Validation
 
-Local Python 3.14 / Django 5.2.18: 16 SQLite tests pass, with four MariaDB-only
-tests skipped. All 20 tests passed against a checksum-verified portable MariaDB
-11.8.9 on Windows, including actual composite foreign keys, authorization view,
-PBKDF2 digest/salt/round projection and live status filtering. Separate probes
-confirmed the RADIUS account cannot read subscriber tables, write business state
-or create tables, and the application account cannot create tables. The portable
-test server was stopped; no Windows service was installed. Download/test files
-remain ignored under `.tools/` and `.dependency-check/`.
+Local Python 3.14 / Django 5.2.18: 16 SQLite tests pass, with five MariaDB-only
+tests skipped. All 21 tests and the complete synthetic FreeRADIUS SQL/PAP packet
+suite passed in Linux CI using the pinned containers. Evidence:
+https://github.com/vsmann3/Netloom-Radius/actions/runs/39641740749 . It covers PAP
+and plan attributes, same-name tenant isolation, rejection cases, NAS spoofing,
+unsupported methods, unknown clients, privilege denials, suspension isolation
+and database outage. These are synthetic RADIUS packets, not PPPoE sessions.
+
+Initial portable MariaDB testing on Windows also passed; that test server was
+stopped, with no Windows service installed. Download/test files remain ignored
+under `.tools/` and `.dependency-check/`.
 
 Django checks and migration consistency pass; both Compose YAML files parse and
 port-exposure assertions pass. Production Python is pinned to 3.13.16. Neither
-Docker nor WSL was installed on this host. Container entrypoints, FreeRADIUS
-configuration parsing and actual RADIUS packets still require Linux validation.
+Docker nor WSL was installed on this Windows host. GitHub Ubuntu CI now performs
+container and packet validation; actual staging/production VM deployment and
+real MikroTik behavior remain pending.
 
 ## Resume here
 
@@ -53,17 +57,19 @@ the existing empty private `vsmann3/libre-radius` untouched.
 
 The proposed staging hostname is `staging-radius.netnoc.in` on `103.215.107.181`;
 the user has been asked to confirm/create its DNS. CI now runs on GitHub's Ubuntu
-runner; application and promotion checks passed on the first run, while container
-integration exposed a startup/packet failure under investigation. A diagnostic
-rerun has been published. Do not promote until packet tests and real staging VM
-validation pass. See `docs/staging-production.md`.
+runner. CI exposed and verified fixes for reply-query collation, upstream PAP
+header normalization and malformed unsupported-method test packets. The complete
+suite now passes. Final integration configuration uses the normal VM startup
+command, not diagnostic debug mode. Do not promote until the latest CI checks
+and real staging VM validation pass. See `docs/staging-production.md`.
 
 1. Obtain SSH username/port/key enrollment for both `.180` and `.181`, the installed
    Ubuntu release and MikroTik source IP/version. Follow `docs/lab-deployment.md`.
 2. Run `sudo python3 scripts/test_radius.py` on Ubuntu. It exercises stock
    FreeRADIUS SQL/PAP with same-name subscribers in two tenants, rejection cases,
    NAS attribute spoofing, privilege denials and database outage; it cleans up
-   only its randomly named disposable project. This harness has not run yet.
+   only its randomly named disposable project. It passed on GitHub's Ubuntu
+   runner; repeat on the actual staging VM before promotion.
 3. Deploy the normal lab and validate `sudo sh scripts/compose.sh --profile radius
    run --rm --no-deps radius check`. UDP remains unpublished. Only PAP is enabled;
    CHAP, MSCHAP and EAP are rejected. Clients require Message-Authenticator.
