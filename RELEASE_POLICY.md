@@ -1,8 +1,8 @@
 # Source control and release policy
 
 Maintained application code, configuration templates, database migrations,
-dependency/image locks, tests and deployment documentation belong in the private
-GitHub repository. Deployment secrets, private keys, subscriber data, database
+dependency/image locks, tests and deployment documentation belong in the public
+GitHub repository `vsmann3/Netloom-Radius`. Deployment secrets, private keys, subscriber data, database
 dumps, virtual environments, downloaded runtimes and generated files stay out of
 Git.
 
@@ -22,7 +22,7 @@ The release flow is:
 not represent a deployable release. Unvalidated application changes stay on
 `staging`. A successful CI run alone does not replace staging acceptance.
 
-Staging and production use different checkouts, Compose project names, databases,
-volumes, credentials and ports. Staging uses synthetic data and a test NAS. A
-shared VM is suitable for this initial lab, but is a shared failure boundary;
-separate VMs can be used as the deployment grows.
+Staging and production run on separate Ubuntu VMs: `103.215.107.181` for staging
+and `103.215.107.180` for production. Each has its own checkout, Compose project,
+database, volumes and credentials. Staging uses synthetic data and a test NAS;
+it must never use production secrets or production subscriber data.
