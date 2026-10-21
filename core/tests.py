@@ -8,6 +8,7 @@ from unittest import skipUnless
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
@@ -198,6 +199,22 @@ class RadiusSQLTests(TestCase):
         self.assertEqual(base64.b64decode(digest), expected)
         self.assertEqual(rate, "10000k/20000k")
         self.assertTrue(1 <= timeout <= 3600)
+
+    def test_deployed_reply_query_handles_driver_connection_collation(self):
+        module = (settings.BASE_DIR / "deploy/radius/mods-enabled/netloom_sql").read_text()
+        query = module.split('authorize_reply_query = "', 1)[1].split('"', 1)[0].replace("\\\n", "")
+        query = query.replace("'%{Packet-Src-IP-Address}'", "%s").replace("'%{SQL-User-Name}'", "%s")
+        with connection.cursor() as cursor:
+            try:
+                for charset in ("latin1", "utf8mb4"):
+                    cursor.execute(f"SET NAMES {charset}")
+                    cursor.execute(query, ["192.0.2.1", "same-user"] * 3)
+                    reply = {row[2]: row[3] for row in cursor.fetchall()}
+                    self.assertEqual(reply["Mikrotik-Rate-Limit"], "10000k/20000k")
+                    self.assertEqual(reply["Acct-Interim-Interval"], "300")
+                    self.assertTrue(1 <= int(reply["Session-Timeout"]) <= 3600)
+            finally:
+                cursor.execute("SET NAMES utf8mb4")
 
     def test_same_name_other_tenant_has_separate_password_and_plan(self):
         tenant = Tenant.objects.create(slug="sql-b", name="SQL B")

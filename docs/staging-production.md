@@ -63,10 +63,11 @@ The web service remains on loopback behind the HTTPS proxy.
 
 GitHub Actions runs application checks and a disposable MariaDB/FreeRADIUS packet
 test on pushes and pull requests involving `staging`/`main`. A production PR must
-come from this repository's `staging` branch. Branch protection should require
-these checks and a pull request, with force pushes and branch deletion disabled.
-Actual server-side enforcement depends on repository permissions and GitHub plan;
-do not call it enforced until its API/settings have been verified.
+come from this repository's `staging` branch. Main branch protection is configured
+and API-verified: pull requests and all three checks are required, the branch must
+be up to date, administrator enforcement is enabled, and force pushes/deletion
+are disabled. Staging also blocks force pushes and deletion. No separate reviewer
+is required, so the repository owner can promote after recording staging acceptance.
 
 After CI passes, deploy the staging SHA and test the website, migrations,
 subscriber isolation and test NAS behavior. Only then promote via a pull request.

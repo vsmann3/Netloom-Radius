@@ -25,8 +25,8 @@ sql netloom_sql {
     safe_characters = "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
     authorize_check_query = "SELECT 1, username, 'PBKDF2-Password', pap_password, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
     authorize_reply_query = "\
-        SELECT 1, username, 'Mikrotik-Rate-Limit', rate_limit, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
-        UNION ALL SELECT 2, username, 'Session-Timeout', session_timeout, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
-        UNION ALL SELECT 3, username, 'Acct-Interim-Interval', '300', ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
+        SELECT 1, username, 'Mikrotik-Rate-Limit', CONVERT(rate_limit USING utf8mb4) COLLATE utf8mb4_bin, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
+        UNION ALL SELECT 2, username, 'Session-Timeout', CONVERT(session_timeout USING utf8mb4) COLLATE utf8mb4_bin, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
+        UNION ALL SELECT 3, username, 'Acct-Interim-Interval', CONVERT('300' USING utf8mb4) COLLATE utf8mb4_bin, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
     # No default radcheck, group, profile, accounting or post-auth queries.
 }

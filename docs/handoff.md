@@ -40,16 +40,23 @@ to the public `vsmann3/Netloom-Radius` repository, with VM deployments fetched f
 Changes must pass CI and deployed staging validation before promotion from
 `staging` to `main`. Local Git now has a policy-only `main` bootstrap and an
 implementation `staging` branch. The CI workflow and separate staging/production
-Compose project/image/port templates are prepared; no remote push has occurred.
+Compose project/image/port templates are prepared. Both branches are now published
+to the public repository; main remains policy-only. Main protection requires a
+PR plus Application checks, MariaDB and FreeRADIUS integration, and Promotion
+policy, with administrator enforcement. Force push/deletion are disabled on both
+branches. Publication used a temporary repository-only deploy key, revoked after
+each push; no persistent GitHub SSH key was added.
 
 The repository selection is resolved: the user explicitly requested a new public
 `vsmann3/Netloom-Radius`. It was created via the authenticated GitHub CLI. Leave
 the existing empty private `vsmann3/libre-radius` untouched.
 
 The proposed staging hostname is `staging-radius.netnoc.in` on `103.215.107.181`;
-the user has been asked to confirm/create its DNS. Branch protections and CI
-execution have not been configured remotely or verified yet. See
-`docs/staging-production.md`.
+the user has been asked to confirm/create its DNS. CI now runs on GitHub's Ubuntu
+runner; application and promotion checks passed on the first run, while container
+integration exposed a startup/packet failure under investigation. A diagnostic
+rerun has been published. Do not promote until packet tests and real staging VM
+validation pass. See `docs/staging-production.md`.
 
 1. Obtain SSH username/port/key enrollment for both `.180` and `.181`, the installed
    Ubuntu release and MikroTik source IP/version. Follow `docs/lab-deployment.md`.
@@ -65,5 +72,5 @@ execution have not been configured remotely or verified yet. See
 
 No Git commit or remote was present when work began. Local Git history is now
 initialized; the policy-only main bootstrap is `e8b366b`. All repository content
-remains local; no push or deployment was performed. The shell sandbox failed to
-initialize; local reads and checks required escalated execution.
+is published on GitHub; neither VM has been deployed to. The shell sandbox failed
+to initialize; local reads and checks required escalated execution.
