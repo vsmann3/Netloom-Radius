@@ -11,8 +11,8 @@ MariaDB 11.8.9, including database tenant constraints and restricted-grant check
 FreeRADIUS uses its stock SQL and PAP modules with tenant-qualified authorization
 and a read-only database account. A disposable packet-test harness is included.
 Linux CI has passed container startup and synthetic RADIUS authentication,
-tenant-isolation, rejection and database-outage checks. The separate staging VM
-and real MikroTik acceptance still need validation. Accounting writes and
+tenant-isolation, rejection and database-outage checks. Initial deployment uses main on 103.215.107.180; separate staging follows initial
+acceptance. Real MikroTik acceptance still needs validation. Accounting writes and
 Disconnect dispatch remain pending.
 
 ## Agreed foundation

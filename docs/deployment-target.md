@@ -10,9 +10,9 @@ User-supplied deployment details, recorded 2026-10-21:
 | Separate staging VM | `103.215.107.181` |
 | Proposed staging hostname | `staging-radius.netnoc.in`, DNS pending confirmation |
 | Public source repository | `https://github.com/vsmann3/Netloom-Radius` |
-| Preferred host OS | Ubuntu Server LTS; installed release pending confirmation |
-| SSH username and port | Pending |
-| SSH key enrollment | Pending |
+| Preferred host OS | Ubuntu 24.04.4 LTS (verified over SSH) |
+| SSH username and port | `jarvis`, port `22` (verified) |
+| SSH key enrollment | Dedicated Ed25519 key enrolled and login verified |
 
 The user reports DNS is pointed at the VM. DNS reachability, SSH access and HTTPS
 have not yet been verified. No remote deployment or VM configuration changes have
@@ -32,3 +32,11 @@ retains Debian 13 support. The host OS does not change the pinned service images
 Keep database access internal and RADIUS traffic limited to registered NAS
 addresses when listeners are enabled. Management access restrictions will be
 configured with the HTTPS deployment.
+
+## Current provisioning checkpoint
+
+SSH host fingerprint verified with the VM console: `SHA256:4Q+IkESOmiCXqfGEFk4fNbom7JdFpCONF6nXxw8feLc`.
+Google ping: four replies, zero loss, average 10.984 ms. VM has 3.8 GiB RAM and
+84 GiB free root storage. Sudo requires a password; automated provisioning is
+waiting for temporary sudo access. Initial work now uses main on this VM;
+staging is deferred until initial acceptance. See the release policy.

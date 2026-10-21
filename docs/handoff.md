@@ -1,3 +1,15 @@
+# Current checkpoint ? 2026-10-21
+
+User superseded the staging-first workflow: initial build and VM testing use
+main on 103.215.107.180; protect main and activate separate staging after initial
+acceptance. SSH as jarvis works with a dedicated key, verified host fingerprint,
+Ubuntu 24.04.4, 3.8 GiB RAM, 84 GiB free disk. Sudo needs a password, temporary
+provisioning access requested. No application installed on the VM yet.
+Read RELEASE_POLICY.md for the current policy. Historical notes below describe
+the earlier staging-first approach and are superseded where they conflict.
+
+---
+
 # Work checkpoint
 
 Updated 2026-10-21. The user selected Ubuntu for the Proxmox VM and supplied

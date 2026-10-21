@@ -1,17 +1,22 @@
 # Deploying the foundation on Ubuntu Server LTS
 
+> Current initial-build workflow (2026-10-21): the user chose to build and test
+> on `main` at `103.215.107.180` first. Staging deployment and required main PR/check
+> enforcement begin after initial acceptance. This supersedes staging-first steps
+> below; see [release policy](../RELEASE_POLICY.md).
+
 This deploys the management service and SQL-backed FreeRADIUS PAP configuration. Run disposable packet tests before enabling NAS traffic. Accounting writes and Disconnect dispatch remain pending; keep the MikroTik configuration unchanged until those integrations are ready.
 
 ## Prepare the guest
 
-Finish [Proxmox setup](proxmox-lab.md), enroll your SSH key and take the baseline snapshot. Use staging VM `103.215.107.181` for this initial deployment. Fetch source from GitHub, then select the reviewed commit that passed CI:
+Finish [Proxmox setup](proxmox-lab.md), enroll your SSH key and take the baseline snapshot. Use VM `103.215.107.180` for the initial main build. Fetch source from GitHub, then select the reviewed commit that passed CI:
 
 ```sh
 sudo apt-get update
 sudo apt-get install -y git
 sudo install -d -m 0755 -o "$(id -un)" -g "$(id -gn)" /srv/netloom
-git clone --branch staging https://github.com/vsmann3/Netloom-Radius.git /srv/netloom/staging
-cd /srv/netloom/staging
+git clone --branch main https://github.com/vsmann3/Netloom-Radius.git /srv/netloom/production
+cd /srv/netloom/production
 git switch --detach REVIEWED_FULL_COMMIT_SHA
 ```
 
@@ -30,7 +35,7 @@ The script supports Ubuntu 24.04/26.04 LTS and Debian 13, selecting the matching
 Run from the repository as its owner:
 
 ```sh
-cp deploy/staging.env.example .env
+cp deploy/panel.env.example .env
 python3 scripts/init_secrets.py
 sudo sh scripts/compose.sh config --quiet
 sudo sh scripts/compose.sh build

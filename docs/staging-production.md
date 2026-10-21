@@ -1,5 +1,10 @@
 # Staging and production
 
+> Current initial-build workflow (2026-10-21): the user chose to build and test
+> on `main` at `103.215.107.180` first. Staging deployment and required main PR/check
+> enforcement begin after initial acceptance. This supersedes staging-first steps
+> below; see [release policy](../RELEASE_POLICY.md).
+
 Follow [the release policy](../RELEASE_POLICY.md): local checks, GitHub CI,
 deployed staging validation, `staging` → `main` pull request, then production.
 The VM fetches code from GitHub; local file copying is not the deployment source.

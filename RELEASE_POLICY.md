@@ -1,28 +1,26 @@
 # Source control and release policy
 
-Maintained application code, configuration templates, database migrations,
-dependency/image locks, tests and deployment documentation belong in the public
-GitHub repository `vsmann3/Netloom-Radius`. Deployment secrets, private keys, subscriber data, database
-dumps, virtual environments, downloaded runtimes and generated files stay out of
-Git.
+Maintained source, templates, migrations, tests and dependency locks belong in
+https://github.com/vsmann3/Netloom-Radius. Secrets, private keys, customer data,
+dumps and generated runtimes stay outside Git.
 
-The release flow is:
+## Initial build phase (user decision, 2026-10-21)
 
-1. Develop and run local checks on a feature branch or `staging`.
-2. Push the change to GitHub. CI runs the application checks and disposable
-   MariaDB/FreeRADIUS packet integration tests.
-3. Deploy the exact `staging` commit from GitHub to the staging environment.
-4. Test on the staging website and test NAS; record the commit and results.
-5. Open a `staging` to `main` pull request. Promote only after CI and staging
-   validation pass. No automatic promotion or production deployment is enabled.
-6. Deploy a reviewed `main` commit from GitHub to production, with migration
-   backup/rollback planning where applicable.
+Develop and validate the initial system on `main`, then deploy exact CI-passing
+commits fetched from GitHub to `/srv/netloom/production` on `103.215.107.180`.
+This is initial development, not an accepted production release. Real NAS traffic
+must wait for authentication, accounting and Disconnect acceptance.
+Main PR/status enforcement is deferred until the initial system is ready;
+force pushes and branch deletion remain disabled. CI continues to run on main.
+The existing staging branch is retained but is not the active development source.
 
-`main` is the production source; an initial policy-only bootstrap commit does
-not represent a deployable release. Unvalidated application changes stay on
-`staging`. A successful CI run alone does not replace staging acceptance.
+## After initial acceptance
 
-Staging and production run on separate Ubuntu VMs: `103.215.107.181` for staging
-and `103.215.107.180` for production. Each has its own checkout, Compose project,
-database, volumes and credentials. Staging uses synthetic data and a test NAS;
-it must never use production secrets or production subscriber data.
+Protect main with required pull requests and application, integration and promotion
+checks. Refresh staging from the accepted main baseline and deploy it separately
+on `103.215.107.181`. Future changes go through local checks, CI, deployed staging
+acceptance, a staging-to-main PR, then a reviewed production deployment.
+No automatic production deployment is enabled.
+
+The two VMs must use independent databases, volumes and credentials. Staging uses
+synthetic data and a test NAS, never production secrets or subscriber data.
