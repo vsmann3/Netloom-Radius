@@ -21,11 +21,18 @@ Docker Engine 29.9.2, Compose 5.6.1; QEMU guest agent active.
   database and RADIUS remain on the internal backend network.
 - Gunicorn control socket disabled for read-only container filesystem.
 
+## HTTPS verification
+
+DNS and public HTTPS are now working. Google and Cloudflare resolve the domain
+to 103.215.107.180. Nginx proxies HTTPS to loopback port 8000, HTTP redirects to
+HTTPS, and the Let's Encrypt certificate expires 2027-01-19. External verification
+confirmed TLS 1.3, login HTTP 200, a secure CSRF cookie and successful CSRF validation
+for an invalid-credentials POST. Certbot timer and Nginx renewal hook are installed.
+Initial HTTPS provisioning is scripts/setup-https.sh. Certificate/private key and
+ACME account stay outside Git. No renewal email is configured.
+
 ## Pending
 
-Public DNS for radius.netnoc.in returned NXDOMAIN from both the VM resolver and
-Google public DNS at provisioning time. User asked to create/verify its A record
-pointing to 103.215.107.180. HTTPS proxy/certificate not installed yet.
 No management user or tenant has been created, and no real NAS has been changed.
 Accounting writes and Disconnect dispatcher remain unimplemented.
 

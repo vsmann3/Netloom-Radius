@@ -40,3 +40,10 @@ Google ping: four replies, zero loss, average 10.984 ms. VM has 3.8 GiB RAM and
 84 GiB free root storage. Sudo requires a password; automated provisioning is
 waiting for temporary sudo access. Initial work now uses main on this VM;
 staging is deferred until initial acceptance. See the release policy.
+
+## HTTPS deployed
+
+DNS and public HTTPS were verified on 2026-10-21. Nginx now proxies the domain
+to the loopback application. See [current VM checkpoint](vm-checkpoint.md); the
+earlier DNS/HTTPS-pending paragraphs are historical. Certificate renewal is
+scheduled with certbot.timer and an Nginx reload hook.
