@@ -7,6 +7,9 @@ User-supplied deployment details, recorded 2026-10-21:
 | Web panel hostname | `radius.netnoc.in` |
 | Intended panel URL | `https://radius.netnoc.in` |
 | VM/public SSH address | `103.215.107.180` |
+| Separate staging VM | `103.215.107.181` |
+| Proposed staging hostname | `staging-radius.netnoc.in`, DNS pending confirmation |
+| Public source repository | `https://github.com/vsmann3/Netloom-Radius` |
 | Preferred host OS | Ubuntu Server LTS; installed release pending confirmation |
 | SSH username and port | Pending |
 | SSH key enrollment | Pending |
@@ -14,6 +17,10 @@ User-supplied deployment details, recorded 2026-10-21:
 The user reports DNS is pointed at the VM. DNS reachability, SSH access and HTTPS
 have not yet been verified. No remote deployment or VM configuration changes have
 been performed.
+
+The user requires staging on its own VM, never on the production VM. Point the
+staging hostname to `103.215.107.181`. SSH username/port, key enrollment and the
+installed Ubuntu release are needed for each host independently.
 
 `deploy/panel.env.example` contains the hostname, HTTPS CSRF origin and secure
 cookie settings for the eventual panel deployment. TLS termination still needs

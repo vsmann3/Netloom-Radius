@@ -21,7 +21,8 @@ validation. Accounting writes and Disconnect dispatch remain pending.
 - Custom Django panel and API; Django 5.2 LTS is the initial framework target.
 - Ubuntu Server LTS guest on Proxmox, with Docker Compose for application services; Debian 13 is also supported by host preparation.
 - Support shared multi-tenant installations and dedicated ISP installations from the same codebase.
-- Private GitHub repository: awaiting confirmation; the existing project repository is `vsmann3/libre-radius`, while the older `vsmann3/Netloom-Radius` entry does not resolve.
+- Public GitHub repository: [vsmann3/Netloom-Radius](https://github.com/vsmann3/Netloom-Radius).
+- Separate Ubuntu VMs: staging at `103.215.107.181`, production at `103.215.107.180`.
 
 Python dependencies are pinned in `requirements.txt`. Verified container tags and
 registry digests are recorded in `image-lock.env`; the Compose wrapper loads that

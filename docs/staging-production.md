@@ -9,6 +9,7 @@ The VM fetches code from GitHub; local file copying is not the deployment source
 | Setting | Staging | Production |
 | --- | --- | --- |
 | Git branch | `staging` | `main` |
+| VM address | `103.215.107.181` | `103.215.107.180` |
 | Checkout | `/srv/netloom/staging` | `/srv/netloom/production` |
 | Compose project | `netloom-radius-staging` | `netloom-radius-production` |
 | Web loopback port | `8001` | `8000` |
@@ -16,10 +17,11 @@ The VM fetches code from GitHub; local file copying is not the deployment source
 | Configuration template | `deploy/staging.env.example` | `deploy/panel.env.example` |
 | Database, volumes and secrets | Staging-only | Production-only |
 
-The user supplied VM address `103.215.107.180`. The staging hostname still needs
-confirmation/DNS; HTTPS and SSH setup remain pending. No environment is deployed
-yet. If both environments share this VM, Compose project names isolate their
-networks and volumes, but host availability/resources are shared.
+The user explicitly requires separate VMs. Staging uses `103.215.107.181` and
+production uses `103.215.107.180`; never deploy both environments to either VM.
+The proposed staging hostname needs DNS pointed at `.181`, not production's
+`.180`. HTTPS, SSH enrollment and installed Ubuntu versions remain pending.
+No environment is deployed yet.
 
 Each checkout has its own ignored `.env` and `secrets/` directory. Never symlink
 or copy production secrets/data into staging. Generate staging credentials
@@ -28,9 +30,10 @@ same real NAS source/secret for testing against both environments.
 
 ## Fetching a release
 
-Use a repository read-only deploy key on the VM. Once the repository URL is
-confirmed, clone it into the appropriate environment directory. Before deployment,
-fetch the relevant branch and select the reviewed full commit SHA:
+The public repository is `https://github.com/vsmann3/Netloom-Radius.git`. Public
+HTTPS cloning needs no GitHub credential on the VM. Clone it into the appropriate
+environment directory on its own VM. Before deployment, fetch the relevant branch
+and select the reviewed full commit SHA:
 
 ```sh
 git fetch origin
@@ -51,9 +54,10 @@ The release runbook's migration/build/start steps then apply within that checkou
 
 For initial staging configuration, copy `deploy/staging.env.example` to `.env`;
 for production copy `deploy/panel.env.example`. Initialize secrets separately in
-each checkout. The Compose project name and image tag must differ so staging
-commands cannot select production's containers, volume or image tag. The web
-service remains on loopback behind the HTTPS proxy.
+each checkout. Keep the environment-specific project names and image tags to
+make the target clear. The separate VMs provide host and storage isolation; no
+production mounts, database connections or secrets may be used on staging.
+The web service remains on loopback behind the HTTPS proxy.
 
 ## Gates
 

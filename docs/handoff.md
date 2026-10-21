@@ -2,7 +2,9 @@
 
 Updated 2026-10-21. The user selected Ubuntu for the Proxmox VM and supplied
 `radius.netnoc.in` with VM/public SSH address `103.215.107.180`. SSH username/port,
-key enrollment and the installed Ubuntu release are pending. No remote deployment
+key enrollment and the installed Ubuntu release are pending. Staging must use a
+separate VM at `103.215.107.181`. The user authorized creating the public repository
+`vsmann3/Netloom-Radius`; that repository has now been created. No remote VM deployment
 has been performed. Details are in `docs/deployment-target.md`.
 
 ## Completed
@@ -34,24 +36,22 @@ configuration parsing and actual RADIUS packets still require Linux validation.
 ## Resume here
 
 The user requires all maintained source/templates/migrations/tests to be uploaded
-to the private project repository, with VM deployments fetched from GitHub.
+to the public `vsmann3/Netloom-Radius` repository, with VM deployments fetched from GitHub.
 Changes must pass CI and deployed staging validation before promotion from
 `staging` to `main`. Local Git now has a policy-only `main` bootstrap and an
 implementation `staging` branch. The CI workflow and separate staging/production
 Compose project/image/port templates are prepared; no remote push has occurred.
 
-Repository selection is pending: authenticated GitHub CLI can see an empty
-private `vsmann3/libre-radius` whose description matches this project; the older
-notes' `vsmann3/Netloom-Radius` does not exist. An asynchronous question asks
-whether to use the existing repository or create the previously named one. Do
-not choose or publish to a different repository without that answer.
+The repository selection is resolved: the user explicitly requested a new public
+`vsmann3/Netloom-Radius`. It was created via the authenticated GitHub CLI. Leave
+the existing empty private `vsmann3/libre-radius` untouched.
 
-The proposed staging hostname is `staging-radius.netnoc.in` on the supplied VM;
+The proposed staging hostname is `staging-radius.netnoc.in` on `103.215.107.181`;
 the user has been asked to confirm/create its DNS. Branch protections and CI
 execution have not been configured remotely or verified yet. See
 `docs/staging-production.md`.
 
-1. Obtain SSH username/port/key enrollment for `103.215.107.180`, the installed
+1. Obtain SSH username/port/key enrollment for both `.180` and `.181`, the installed
    Ubuntu release and MikroTik source IP/version. Follow `docs/lab-deployment.md`.
 2. Run `sudo python3 scripts/test_radius.py` on Ubuntu. It exercises stock
    FreeRADIUS SQL/PAP with same-name subscribers in two tenants, rejection cases,
