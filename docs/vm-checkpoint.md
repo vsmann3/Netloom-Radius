@@ -33,7 +33,8 @@ ACME account stay outside Git. No renewal email is configured.
 
 ## Pending
 
-No management user or tenant has been created, and no real NAS has been changed.
+User confirmed successful panel login at the end of the session. Tenant membership
+was not inspected. No real NAS has been changed.
 Accounting writes and Disconnect dispatcher remain unimplemented.
 
 After HTTPS is ready, create an operator through an interactive VM console:
@@ -47,3 +48,6 @@ sudo sh scripts/compose.sh exec web python manage.py seed_lab --owner YOUR_USERN
 This seeds a lab tenant, not live customer data. Temporary bootstrap sudo access
 must be removed at the end of provisioning; future sudo uses the operator password.
 The main/staging transition is described in RELEASE_POLICY.md.
+
+End-of-session verification: Certbot renewal simulation succeeded. Temporary
+passwordless sudo rule removed. See handoff.md to resume.
