@@ -50,8 +50,13 @@ services:
         condition: service_completed_successfully
   radius:
     image: ${FREERADIUS_IMAGE:?Load image-lock.env}
-    entrypoint: [/bin/sh, /opt/netloom/start.sh]
-    command: []
+    # Debug only in this disposable synthetic-data project. Public diagnostics
+    # pass through the harness's credential redaction before being printed.
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        export RADIUS_DB_PASSWORD="$$(cat /run/secrets/db_radius_password)"
+        exec freeradius -X
     secrets: [db_radius_password, radius_clients, integration_secret_a, integration_secret_b]
     volumes:
       - ./deploy/radius/start.sh:/opt/netloom/start.sh:ro
