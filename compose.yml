@@ -64,6 +64,7 @@ services:
 
   web:
     <<: *app
+    networks: [backend, frontend]
     restart: unless-stopped
     ports: ["127.0.0.1:${WEB_PORT:-8000}:8000"]
     depends_on:
@@ -93,6 +94,7 @@ services:
     # No published UDP ports until the disposable packet tests pass on the VM.
 
 networks:
+  frontend: {}
   backend:
     internal: true
 volumes:
