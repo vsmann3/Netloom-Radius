@@ -1,0 +1,51 @@
+# PAP-only PPP authentication through stock SQL + PAP modules.
+server default {
+    listen {
+        type = auth
+        ipaddr = *
+        port = 1812
+    }
+    listen {
+        type = acct
+        ipaddr = *
+        port = 1813
+    }
+    authorize {
+        if (!&User-Name || &User-Name !~ /^[A-Za-z0-9_.@-]{1,64}$/) {
+            reject
+        }
+        if (!&User-Password || &CHAP-Password || &EAP-Message || &MS-CHAP-Response || &MS-CHAP2-Response) {
+            reject
+        }
+        netloom_sql
+        if (notfound || fail || invalid || reject || noop) {
+            reject
+        }
+        if (!&control:PBKDF2-Password || !&reply:Mikrotik-Rate-Limit || !&reply:Session-Timeout) {
+            reject
+        }
+        pap
+    }
+    authenticate {
+        Auth-Type PAP {
+            pap
+        }
+    }
+    # Accounting is deliberately unacknowledged until tenant-safe writes exist.
+    preacct {
+        reject
+    }
+    accounting {
+        reject
+    }
+    post-auth {
+        Post-Auth-Type REJECT {
+            update reply {
+                Mikrotik-Rate-Limit !* ANY
+                Session-Timeout !* ANY
+                Acct-Interim-Interval !* ANY
+            }
+            reject
+        }
+    }
+}

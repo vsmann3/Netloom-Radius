@@ -1,0 +1,3 @@
+always reject {
+    rcode = reject
+}

@@ -1,0 +1,32 @@
+# Supported upstream rlm_sql_mysql; no FreeRADIUS code changes.
+sql netloom_sql {
+    dialect = "mysql"
+    driver = "rlm_sql_mysql"
+    server = "db"
+    port = 3306
+    login = "netloom_radius"
+    password = "$ENV{RADIUS_DB_PASSWORD}"
+    radius_db = "netloom"
+    read_clients = no
+    read_groups = no
+    read_profiles = no
+    query_timeout = 3
+    pool {
+        start = 1
+        min = 1
+        max = 8
+        spare = 1
+        uses = 0
+        lifetime = 0
+        idle_timeout = 60
+        retry_delay = 5
+    }
+    sql_user_name = "%{User-Name}"
+    safe_characters = "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
+    authorize_check_query = "SELECT 1, username, 'PBKDF2-Password', pap_password, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
+    authorize_reply_query = "\
+        SELECT 1, username, 'Mikrotik-Rate-Limit', rate_limit, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
+        UNION ALL SELECT 2, username, 'Session-Timeout', session_timeout, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
+        UNION ALL SELECT 3, username, 'Acct-Interim-Interval', '300', ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
+    # No default radcheck, group, profile, accounting or post-auth queries.
+}

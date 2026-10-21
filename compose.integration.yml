@@ -1,0 +1,89 @@
+# Disposable project only, invoked by scripts/test_radius.py. No published ports.
+x-integration-app: &integration-app
+  image: ${INTEGRATION_APP_IMAGE:?Use scripts/test_radius.py}
+  build:
+    context: .
+    args:
+      PYTHON_IMAGE: ${PYTHON_IMAGE:?Load image-lock.env}
+  environment: &integration-env
+    DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
+    DB_PASSWORD_FILE: /run/secrets/db_migration_password
+    DB_HOST: db
+    DB_NAME: netloom
+    DB_USER: netloom_migrate
+  secrets: [django_secret_key, db_migration_password]
+  networks: [integration]
+
+services:
+  db:
+    image: ${MARIADB_IMAGE:?Load image-lock.env}
+    environment:
+      MARIADB_DATABASE: netloom
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_ROOT_HOST: localhost
+    secrets: [db_password, db_root_password, db_migration_password, db_radius_password]
+    volumes:
+      - integration_data:/var/lib/mysql
+      - ./deploy/db/10-service-users.sh:/docker-entrypoint-initdb.d/10-service-users.sh:ro
+    networks: [integration]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+  migrate:
+    <<: *integration-app
+    command: [python, manage.py, migrate, --noinput]
+    depends_on:
+      db:
+        condition: service_healthy
+  seed:
+    <<: *integration-app
+    command: [python, manage.py, seed_radius_integration]
+    environment:
+      <<: *integration-env
+      NETLOOM_INTEGRATION: "1"
+    secrets: [django_secret_key, db_migration_password, radius_integration_data]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  radius:
+    image: ${FREERADIUS_IMAGE:?Load image-lock.env}
+    entrypoint: [/bin/sh, /opt/netloom/start.sh]
+    command: []
+    secrets: [db_radius_password, radius_clients, integration_secret_a, integration_secret_b]
+    volumes:
+      - ./deploy/radius/start.sh:/opt/netloom/start.sh:ro
+      - ./deploy/radius/clients.conf:/etc/raddb/clients.conf:ro
+      - ./deploy/radius/sites-enabled:/etc/raddb/sites-enabled:ro
+      - ./deploy/radius/mods-enabled:/etc/raddb/mods-enabled:ro
+    networks: [integration]
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+networks:
+  integration:
+    internal: true
+volumes:
+  integration_data:
+secrets:
+  django_secret_key:
+    file: ${INTEGRATION_DIR}/django_secret_key
+  db_password:
+    file: ${INTEGRATION_DIR}/db_password
+  db_root_password:
+    file: ${INTEGRATION_DIR}/db_root_password
+  db_migration_password:
+    file: ${INTEGRATION_DIR}/db_migration_password
+  db_radius_password:
+    file: ${INTEGRATION_DIR}/db_radius_password
+  radius_clients:
+    file: ${INTEGRATION_DIR}/radius_clients
+  radius_integration_data:
+    file: ${INTEGRATION_DIR}/radius_integration_data
+  integration_secret_a:
+    file: ${INTEGRATION_DIR}/integration_secret_a
+  integration_secret_b:
+    file: ${INTEGRATION_DIR}/integration_secret_b
