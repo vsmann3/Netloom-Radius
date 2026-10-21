@@ -23,7 +23,8 @@ sql netloom_sql {
     }
     sql_user_name = "%{User-Name}"
     safe_characters = "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
-    authorize_check_query = "SELECT 1, username, 'PBKDF2-Password', pap_password, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
+    # PAP's preferred header normalization also selects Auth-Type for PBKDF2.
+    authorize_check_query = "SELECT 1, username, 'Password-With-Header', CONCAT('{X-PBKDF2}', pap_password), ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}'"
     authorize_reply_query = "\
         SELECT 1, username, 'Mikrotik-Rate-Limit', CONVERT(rate_limit USING utf8mb4) COLLATE utf8mb4_bin, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \
         UNION ALL SELECT 2, username, 'Session-Timeout', CONVERT(session_timeout USING utf8mb4) COLLATE utf8mb4_bin, ':=' FROM radius_authorization WHERE source_ip = '%{Packet-Src-IP-Address}' AND username = BINARY '%{SQL-User-Name}' \

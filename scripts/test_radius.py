@@ -50,7 +50,7 @@ def main():
         def redact(output):
             for value in sensitive:
                 output = output.replace(value, "[redacted]")
-            return re.sub(r"(?im)^.*(?:User-Password|Cleartext-Password|PBKDF2-Password|pap_password|password_hash|\bsecret\s*=|\bpassword\s*=).*$", "[credential line omitted]", output)
+            return re.sub(r"(?im)^.*(?:User-Password|Cleartext-Password|Password-With-Header|PBKDF2-Password|pap_password|password_hash|\bsecret\s*=|\bpassword\s*=).*$", "[credential line omitted]", output)
 
         def compose(*arguments, input=None, timeout=180, checked=True):
             result = subprocess.run(command + list(arguments), cwd=ROOT, env=env, input=input, text=True, capture_output=True, timeout=timeout)

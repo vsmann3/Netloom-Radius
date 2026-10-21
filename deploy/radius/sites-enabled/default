@@ -21,7 +21,7 @@ server default {
         if (notfound || fail || invalid || reject || noop) {
             reject
         }
-        if (!&control:PBKDF2-Password || !&reply:Mikrotik-Rate-Limit || !&reply:Session-Timeout) {
+        if (!&control:Password-With-Header || !&reply:Mikrotik-Rate-Limit || !&reply:Session-Timeout) {
             reject
         }
         pap

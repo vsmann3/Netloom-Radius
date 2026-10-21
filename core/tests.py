@@ -190,6 +190,11 @@ class RadiusSQLTests(TestCase):
             cursor.execute("SELECT pap_password, rate_limit, session_timeout FROM radius_authorization WHERE source_ip=%s AND username=BINARY %s", [source, username])
             return cursor.fetchall()
 
+    def module_query(self, name):
+        module = (settings.BASE_DIR / "deploy/radius/mods-enabled/netloom_sql").read_text()
+        query = module.split(name + ' = "', 1)[1].split('"', 1)[0].replace("\\\n", "")
+        return query.replace("'%{Packet-Src-IP-Address}'", "%s").replace("'%{SQL-User-Name}'", "%s")
+
     def test_pap_format_preserves_digest_salt_and_rounds(self):
         credential, rate, timeout = self.rows()[0]
         self.assertTrue(credential.startswith("$PBKDF2$HMACSHA2+256:"))
@@ -199,11 +204,14 @@ class RadiusSQLTests(TestCase):
         self.assertEqual(base64.b64decode(digest), expected)
         self.assertEqual(rate, "10000k/20000k")
         self.assertTrue(1 <= timeout <= 3600)
+        with connection.cursor() as cursor:
+            cursor.execute(self.module_query("authorize_check_query"), ["192.0.2.1", "same-user"])
+            row = cursor.fetchone()
+            self.assertEqual(row[2], "Password-With-Header")
+            self.assertEqual(row[3], "{X-PBKDF2}" + credential)
 
     def test_deployed_reply_query_handles_driver_connection_collation(self):
-        module = (settings.BASE_DIR / "deploy/radius/mods-enabled/netloom_sql").read_text()
-        query = module.split('authorize_reply_query = "', 1)[1].split('"', 1)[0].replace("\\\n", "")
-        query = query.replace("'%{Packet-Src-IP-Address}'", "%s").replace("'%{SQL-User-Name}'", "%s")
+        query = self.module_query("authorize_reply_query")
         with connection.cursor() as cursor:
             try:
                 for charset in ("latin1", "utf8mb4"):
