@@ -1,0 +1,32 @@
+# Deployment secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Customer data and backups
+backups/
+*.sql.gz
+*.dump
+data/
+logs/
+*.log
+
+# Python and local tools
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+.dependency-check/
+*.sqlite3
+.tools/
+.radius-config/
