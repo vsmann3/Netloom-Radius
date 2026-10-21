@@ -75,6 +75,12 @@ def main():
                 attrs.append(f'User-Password = "{password or data["password_a"]}"')
             elif method == "chap":
                 attrs.append(f'CHAP-Password = "{data["password_a"]}"')
+            elif method == "eap":
+                attrs.append("EAP-Message = 0x0200000501")
+            elif method == "mschap":
+                attrs.extend(["MS-CHAP-Challenge = 0x" + "00" * 8, "MS-CHAP-Response = 0x" + "00" * 50])
+            else:
+                raise ValueError("Unknown integration authentication method")
             if authenticator:
                 attrs.append("Message-Authenticator = 0x" + "00" * 16)
             else:
@@ -113,7 +119,9 @@ def main():
                     packet(rate="10000k/20000k")
                     break
                 except RuntimeError:
-                    if attempt == 19:
+                    # A real reply means startup is complete; policy failures
+                    # must be diagnosed immediately, rather than retried.
+                    if attempt == 19 or "Received Access-" in last_packet_output:
                         raise
                     time.sleep(1)
             print("PASS: FreeRADIUS PAP authentication and plan attributes", flush=True)
@@ -128,8 +136,8 @@ def main():
             packet(extra="NAS-IP-Address = 127.0.0.3", rate="10000k/20000k")
             packet(extra="NAS-IP-Address = 127.0.0.3", password=data["password_b"], expected="Access-Reject")
             packet(method="chap", expected="Access-Reject")
-            packet(extra="EAP-Message = 0x0200000501", expected="Access-Reject")
-            packet(extra="MS-CHAP-Response = 0x" + "00" * 50, expected="Access-Reject")
+            packet(method="eap", expected="Access-Reject")
+            packet(method="mschap", expected="Access-Reject")
             packet(source=4, expected="timeout")
             packet(authenticator=False, expected="timeout")
             packet(rate="10000k/20000k")

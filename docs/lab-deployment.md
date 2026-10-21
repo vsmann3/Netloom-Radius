@@ -4,7 +4,18 @@ This deploys the management service and SQL-backed FreeRADIUS PAP configuration.
 
 ## Prepare the guest
 
-Finish [Proxmox setup](proxmox-lab.md), enroll your SSH key and take the baseline snapshot. Transfer this repository to a named user's directory on the guest. There is no initial Git commit or configured remote in the current workspace; create/review that revision before calling a deployment reproducible.
+Finish [Proxmox setup](proxmox-lab.md), enroll your SSH key and take the baseline snapshot. Use staging VM `103.215.107.181` for this initial deployment. Fetch source from GitHub, then select the reviewed commit that passed CI:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y git
+sudo install -d -m 0755 -o "$(id -un)" -g "$(id -gn)" /srv/netloom
+git clone --branch staging https://github.com/vsmann3/Netloom-Radius.git /srv/netloom/staging
+cd /srv/netloom/staging
+git switch --detach REVIEWED_FULL_COMMIT_SHA
+```
+
+Production is a separate VM at `103.215.107.180` and will fetch reviewed `main` releases only. Main currently contains policy files, not a deployable application; no production release is authorized before staging validation. See [environment separation](staging-production.md).
 
 Review `scripts/prepare-linux.sh`, then run it on the fresh guest:
 
@@ -19,7 +30,7 @@ The script supports Ubuntu 24.04/26.04 LTS and Debian 13, selecting the matching
 Run from the repository as its owner:
 
 ```sh
-cp .env.example .env
+cp deploy/staging.env.example .env
 python3 scripts/init_secrets.py
 sudo sh scripts/compose.sh config --quiet
 sudo sh scripts/compose.sh build
@@ -40,13 +51,13 @@ Synthetic subscribers have unusable passwords. This does not generate live PPPoE
 
 The wrapper loads both `image-lock.env` and `.env`; a plain `docker compose up` does not load the image lock. Secrets live under the owner-only `secrets/` directory, outside Git. On Linux individual files are read-only and readable through their container mounts by the non-root application user. Keep the parent directory mode `0700`; back it up separately in protected storage. Re-running secret initialization preserves existing credentials.
 
-Only the web service publishes a port, on guest loopback. The database has no LAN listener. For initial lab access, retain the example's insecure-cookie setting only over an SSH tunnel:
+Only web publishes a port, on guest loopback. The database has no LAN listener. Staging uses port 8001. For initial SSH-tunnel access, temporarily set `DJANGO_SECURE_COOKIES=false` in the staging `.env`; restore it to `true` before HTTPS network access:
 
 ```sh
-ssh -L 8000:127.0.0.1:8000 YOUR_USERNAME@VM_IP
+ssh -L 8001:127.0.0.1:8001 YOUR_USERNAME@103.215.107.181
 ```
 
-Open `http://127.0.0.1:8000/` locally. Before network browser access, configure an HTTPS reverse proxy, allowed hosts and trusted CSRF origins, set `DJANGO_SECURE_COOKIES=true`, and verify the management-network firewall. No proxy is included yet; Django does not trust forwarded headers by default.
+Open `http://127.0.0.1:8001/` locally. Before network browser access, configure an HTTPS reverse proxy, allowed hosts and trusted CSRF origins, set `DJANGO_SECURE_COOKIES=true`, and verify the management-network firewall. No proxy is included yet; Django does not trust forwarded headers by default. Staging DNS must point to `.181`; production `radius.netnoc.in` stays on `.180`.
 
 ## Checks on the VM
 
@@ -68,7 +79,7 @@ sudo sh scripts/compose.sh --profile radius run --rm --no-deps radius check
 
 Use the one-shot form for validation. Record the result; this has not been run on the Windows development host.
 
-Verify `curl -f http://127.0.0.1:8000/health/`, restart services and check that tenant records persist. From an unauthorized LAN host verify database port 3306 and the panel port 8000 are inaccessible. UDP 1812/1813 remain unpublished until integration validation and the NAS allowlist are ready. Check Proxmox, guest and Docker firewall behavior separately.
+Verify `curl -f http://127.0.0.1:8001/health/` on staging, restart services and check that tenant records persist. From an unauthorized LAN host verify database port 3306 and panel loopback ports are inaccessible. UDP 1812/1813 remain unpublished until integration validation and the NAS allowlist are ready. Check Proxmox, guest and Docker firewall behavior separately.
 
 ## Database roles and existing volumes
 
