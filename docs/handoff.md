@@ -1,3 +1,9 @@
+# Latest VM checkpoint
+
+Application and FreeRADIUS now run on 103.215.107.180 from GitHub main.
+Read [VM checkpoint](vm-checkpoint.md) for verified tests and pending DNS/HTTPS.
+The provisioning and sudo-pending statements below are historical.
+
 # Current checkpoint ? 2026-10-21
 
 User superseded the staging-first workflow: initial build and VM testing use
