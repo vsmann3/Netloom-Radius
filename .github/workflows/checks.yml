@@ -62,4 +62,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Exercise upstream SQL and PAP with disposable synthetic data
-        run: python3 scripts/test_radius.py
+        run: |
+          docker build --check .
+          python3 scripts/test_radius.py
