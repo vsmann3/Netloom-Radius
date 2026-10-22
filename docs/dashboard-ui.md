@@ -4,7 +4,8 @@ The management interface uses the MIT-licensed Tabler 1.6.1 dashboard stylesheet
 with Django templates. Vendor CSS and its license are in core/static/vendor/tabler;
 Netloom layout rules are in core/static/netloom/app.css. No browser CDN requests,
 Node build or frontend framework are required. Native links/details controls handle
-navigation and company switching without JavaScript.
+navigation and company switching. A small local compatibility script redirects
+old company section bookmarks to the new dedicated pages.
 
 WhiteNoise 6.12.0 serves collected local assets with DEBUG disabled. The Docker
 image collects assets at build time using placeholder settings, without connecting

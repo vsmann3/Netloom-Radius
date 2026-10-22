@@ -2,6 +2,17 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+User requested separate pages for each management area and a filterable subscriber
+directory. Implemented company overview plus /users/, /plans/ and /routers/ pages.
+Subscriber filters cover account UUID, username, status, plan, validity, expiry,
+creation and last recorded renewal dates, with sorting and persistent pagination.
+0005 adds nullable last_renewed_at (no invented historical dates); 0006 adds date
+lookup indexes. Renewal transactions remain pending. See directories.md.
+Local 50-test suite passed (6 MariaDB-only skipped), desktop/mobile browser checks
+passed. Numeric subscriber account IDs were asked about asynchronously; until
+confirmed, account IDs remain UUIDs. Deployment needs the migration role before
+recreating web; company-number and renewal/index migrations may all be pending on VM.
+
 User confirmed the Tabler dashboard works on the VM. User then requested mandatory
 numeric company/franchise IDs of at least five digits and shorter company URLs.
 Implemented company_id and migration 0004 with backfill, numeric browser routes,

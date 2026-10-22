@@ -82,8 +82,15 @@ class Subscriber(TenantRecord):
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
     expires_at = models.DateTimeField()
+    # Populated only by a future audited renewal workflow; never infer from expiry.
+    last_renewed_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     class Meta:
+        indexes = [
+            models.Index(fields=["tenant", "expires_at"], name="subscriber_tenant_expiry"),
+            models.Index(fields=["tenant", "created_at"], name="subscriber_tenant_created"),
+            models.Index(fields=["tenant", "last_renewed_at"], name="subscriber_tenant_renewed"),
+        ]
         constraints = [
             models.UniqueConstraint(fields=["tenant", "username"], name="subscriber_tenant_username"),
             models.UniqueConstraint(fields=["id", "tenant"], name="subscriber_id_tenant"),

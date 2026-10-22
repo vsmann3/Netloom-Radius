@@ -190,7 +190,7 @@ class CompanyManagementTests(TestCase):
                 "expires_at": (timezone.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M"), **kwargs}
 
     def test_company_page_and_plan_creation_are_scoped_and_audited(self):
-        response = self.client.get(self.url)
+        response = self.client.get(reverse("company-plans", args=[self.a.company_id]))
         self.assertContains(response, "Local plan")
         self.assertNotContains(response, "Private foreign plan")
         self.assertEqual(self.client.get(reverse("company", args=[self.b.company_id])).status_code, 403)
@@ -245,7 +245,7 @@ class CompanyManagementTests(TestCase):
         self.assertEqual(nas.secret_ref, f"nas-{nas.id.hex}")
         self.assertEqual(AuditEvent.objects.get().action, "nas.create")
         NAS.objects.create(tenant=self.b, name="Other company router", source_ip="192.0.2.81", secret_ref="private-reference")
-        response = self.client.get(self.url)
+        response = self.client.get(reverse("company-routers", args=[self.a.company_id]))
         self.assertContains(response, "Branch router")
         self.assertNotContains(response, "Other company router")
         self.assertNotContains(response, nas.secret_ref)
@@ -290,8 +290,9 @@ class CompanyManagementTests(TestCase):
         self.assertEqual(self.client.post(reverse("company-suspend", args=[self.b.company_id, subscriber.pk])).status_code, 403)
         foreign = Subscriber.objects.create(tenant=self.b, plan=self.foreign_plan, username="foreign", password_hash="!", expires_at=timezone.now())
         self.assertEqual(self.client.post(reverse("company-suspend", args=[self.a.company_id, foreign.pk])).status_code, 404)
-        self.assertRedirects(self.client.post(url), self.url)
-        self.assertRedirects(self.client.post(url), self.url)
+        directory = reverse("company-users", args=[self.a.company_id])
+        self.assertRedirects(self.client.post(url), directory)
+        self.assertRedirects(self.client.post(url), directory)
         subscriber.refresh_from_db()
         self.assertEqual(subscriber.status, "suspended")
         self.assertEqual(AuditEvent.objects.filter(action="subscriber.suspend").count(), 1)
@@ -301,10 +302,11 @@ class CompanyManagementTests(TestCase):
             Subscriber(tenant=self.a, plan=self.plan, username=f"page-{index:03}", password_hash="!",
                        expires_at=timezone.now()) for index in range(101)
         ])
-        first = self.client.get(self.url)
+        url = reverse("company-users", args=[self.a.company_id])
+        first = self.client.get(url, {"per_page": 100})
         self.assertEqual(len(first.context["records"]), 100)
         self.assertNotContains(first, "page-100")
-        second = self.client.get(self.url, {"page": 2})
+        second = self.client.get(url, {"page": 2, "per_page": 100})
         self.assertEqual(len(second.context["records"]), 1)
         self.assertContains(second, "page-100")
 

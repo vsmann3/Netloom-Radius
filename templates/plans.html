@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Service plans | {{ tenant.name }}{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">COMPANY ID {{ tenant.company_id }}</div><h1>Service plans</h1><p class="text-secondary">{{ tenant.name }}</p></div></div>
+<section id="plans" class="workspace-section"><div class="section-heading"><h2>Service plans</h2><span class="text-secondary">{{ plans|length }} configured plans</span></div><div class="section-grid"><div class="card"><div class="card-header"><h3 class="card-title">Speed profiles</h3></div><div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Plan name</th><th>Upload (kbps)</th><th>Download (kbps)</th></tr></thead><tbody>{% for plan in plans %}<tr><td class="fw-semibold">{{ plan.name }}</td><td>{{ plan.upload_kbps }}</td><td>{{ plan.download_kbps }}</td></tr>{% empty %}<tr><td colspan="3"><div class="empty-state"><strong>No plans yet</strong>Create your first upload and download speed profile.</div></td></tr>{% endfor %}</tbody></table></div></div>
+{% if can_write %}<div class="card form-card"><div class="card-body"><h3>Create plan</h3><p class="text-secondary small">Speeds are measured in kbps. 1000 kbps = 1 Mbps.</p><form method="post" action="#plans">{% csrf_token %}<input type="hidden" name="kind" value="plan">{% include 'includes/form_fields.html' with form=plan_form %}<button class="btn btn-primary w-100" type="submit">Create plan</button></form></div></div>{% endif %}</div></section>
+{% endblock %}

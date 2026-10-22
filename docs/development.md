@@ -1,5 +1,12 @@
 # Development and current implementation
 
+## Dedicated directories - 2026-10-22
+
+Company overview, users/subscribers, plans and NAS devices now have separate pages.
+Users have validated, tenant-scoped search/date/state/plan filters, sorting and
+pagination. Renewal dates are nullable and unrecorded until a renewal workflow
+exists. Migrations 0005/0006 add the field and date indexes. See [directory notes](directories.md).
+
 ## Dashboard UI - 2026-10-22
 
 The basic scaffold is replaced by locally bundled Tabler 1.6.1 templates and

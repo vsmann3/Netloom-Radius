@@ -47,7 +47,7 @@ class CompanyNumberTests(TestCase):
 class CompanyNumberMigrationTests(TransactionTestCase):
     def test_backfill_preserves_existing_uuid_and_membership(self):
         before = [("core", "0003_radius_authorization")]
-        after = [("core", "0004_company_numbers")]
+        after = [("core", "0006_subscriber_subscriber_tenant_expiry_and_more")]
         executor = MigrationExecutor(connection)
         executor.migrate(before)
         try:

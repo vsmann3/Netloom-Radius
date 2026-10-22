@@ -13,7 +13,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.http import require_GET, require_POST
 
 from .models import AuditEvent, Membership, NAS, Plan, Subscriber, Tenant
-from .forms import NASForm, PlanForm, SubscriberForm
+from .forms import NASForm, PlanForm, SubscriberForm, SubscriberFilterForm
+from .directories import filter_subscribers
 from .services import require_membership, suspend_subscriber
 
 
@@ -43,7 +44,7 @@ def dashboard(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def company(request, company_id=None, tenant_id=None):
+def company(request, company_id=None, tenant_id=None, section="overview"):
     tenant = get_object_or_404(Tenant, company_id=company_id) if company_id is not None else get_object_or_404(Tenant, pk=tenant_id)
     tenant_id = tenant.pk
     membership = require_membership(request.user, tenant_id, write=request.method == "POST")
@@ -73,8 +74,26 @@ def company(request, company_id=None, tenant_id=None):
             except IntegrityError:
                 form.add_error(None, "The record conflicts with existing data. Check the details and try again.")
             else:
-                return redirect("company", company_id=tenant.company_id)
-    return render(request, "company.html", {
+                return redirect({"overview": "company", "subscribers": "company-users", "plans": "company-plans", "routers": "company-routers"}[section], company_id=tenant.company_id)
+    query = request.GET.copy()
+    query.pop("page", None)
+    filter_data = {"sort": "username", "per_page": "50", **query.dict()}
+    filter_form = SubscriberFilterForm(filter_data, tenant_id=tenant_id)
+    records = Subscriber.objects.filter(tenant_id=tenant_id).select_related("plan")
+    total_subscribers = records.count()
+    if section == "subscribers":
+        records = filter_subscribers(records, filter_form.cleaned_data) if filter_form.is_valid() else records.none()
+    else:
+        records = records.order_by("username", "id")
+    per_page = (filter_form.cleaned_data.get("per_page") or 50) if section == "subscribers" else 100
+    render_section = {"subscriber": "subscribers", "plan": "plans", "nas": "routers"}.get(kind, section) if section == "overview" else section
+    advanced_fields = ["expiry_from", "expiry_to", "created_from", "created_to", "renewal_from", "renewal_to", "renewal_record"]
+    return render(request, {"overview": "company.html", "subscribers": "users.html", "plans": "plans.html", "routers": "routers.html"}[render_section], {
+        "section": render_section, "filter_form": filter_form, "filter_query": query.urlencode(),
+        "primary_filters": [filter_form[name] for name in ["account_id", "username", "status", "validity", "plan", "sort", "per_page"]],
+        "advanced_filters": [filter_form[name] for name in advanced_fields],
+        "advanced_open": any(filter_form[name].value() for name in advanced_fields),
+        "total_subscribers": total_subscribers, "now": timezone.now(),
         "tenant": tenant, "can_write": membership.role in {"owner", "operator"},
         "membership": membership,
         "memberships": Membership.objects.select_related("tenant").filter(user=request.user, tenant__active=True),
@@ -85,7 +104,7 @@ def company(request, company_id=None, tenant_id=None):
         "can_manage_nas": membership.role == Membership.Role.OWNER,
         "devices": NAS.objects.filter(tenant_id=tenant_id).order_by("name"),
         "plans": Plan.objects.filter(tenant_id=tenant_id).order_by("name"),
-        "records": Paginator(Subscriber.objects.filter(tenant_id=tenant_id).select_related("plan").order_by("username", "id"), 100).get_page(request.GET.get("page")),
+        "records": Paginator(records, per_page).get_page(request.GET.get("page")),
         "plan_form": plan_form, "subscriber_form": subscriber_form, "nas_form": nas_form,
     })
 
@@ -126,4 +145,4 @@ def suspend_from_company(request, subscriber_id, company_id=None, tenant_id=None
     tenant = get_object_or_404(Tenant, company_id=company_id) if company_id is not None else get_object_or_404(Tenant, pk=tenant_id)
     tenant_id = tenant.pk
     suspend_subscriber(actor=request.user, tenant_id=tenant_id, subscriber_id=subscriber_id)
-    return redirect("company", company_id=tenant.company_id)
+    return redirect("company-users", company_id=tenant.company_id)
