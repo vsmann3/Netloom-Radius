@@ -173,6 +173,11 @@ class CAFProvisioningTests(TestCase):
     def test_isolated_demo_activation_replay_keeps_expiry_anchor(self):
         body = self.bundle()
         first = self.provision(body)
+        if connection.vendor != "sqlite":
+            self.assertEqual(first.status_code, 503)
+            self.assertEqual(first.json()["error"]["code"], "demo_activation_not_isolated")
+            self.assertFalse(Subscriber.objects.exists())
+            return
         self.assertEqual(first.json()["service_status"], "active")
         expiry = Subscriber.objects.get().expires_at
         self.assertEqual(self.provision(body).json(), first.json())
