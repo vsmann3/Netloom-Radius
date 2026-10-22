@@ -21,7 +21,7 @@
 </aside>
 <div class="app-main">
 <header class="app-header">
-<details class="company-picker"><summary>{% if tenant %}{{ tenant.name }}{% else %}All your companies{% endif %} <span aria-hidden="true">⌄</span></summary><div class="company-menu"><a href="{% url 'dashboard' %}">Company overview</a>{% for item in memberships %}<a href="{% url 'company' item.tenant_id %}">{{ item.tenant.name }}</a>{% endfor %}</div></details>
+<details class="company-picker"><summary>{% if tenant %}{{ tenant.name }}{% else %}All your companies{% endif %} <span aria-hidden="true">⌄</span></summary><div class="company-menu"><a href="{% url 'dashboard' %}">Company overview</a>{% for item in memberships %}<a href="{% url 'company' item.tenant.company_id %}">{{ item.tenant.name }}</a>{% endfor %}</div></details>
 <div class="account-menu"><span class="avatar avatar-sm bg-blue-lt">{{ user.get_username|first|upper }}</span><div><strong>{{ user.get_username }}</strong><div class="text-secondary small">{% if membership %}{{ membership.get_role_display }}{% else %}Management account{% endif %}</div></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Sign out</button></form></div>
 </header>
 <main id="main-content" class="app-content">{% block content %}{% endblock %}</main>

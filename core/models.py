@@ -5,12 +5,25 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Q
 
+from .identifiers import next_organization_number
+
+
+class OrganizationNumber(models.Model):
+    # Keep issued registry rows. Rollbacks may leave gaps; company and future
+    # franchise numbers share this allocation namespace.
+    id = models.BigAutoField(primary_key=True)
+    issued_at = models.DateTimeField(auto_now_add=True)
+
 
 class Tenant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company_id = models.PositiveBigIntegerField(unique=True, editable=False, default=next_organization_number)
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=160)
     active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=Q(company_id__gte=10000), name="company_id_min_five_digits")]
 
     def __str__(self):
         return self.name

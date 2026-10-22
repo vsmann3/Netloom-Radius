@@ -182,7 +182,7 @@ class CompanyManagementTests(TestCase):
         Membership.objects.create(user=self.viewer, tenant=self.a, role="viewer")
         self.plan = Plan.objects.create(tenant=self.a, name="Local plan", upload_kbps=1000, download_kbps=2000)
         self.foreign_plan = Plan.objects.create(tenant=self.b, name="Private foreign plan", upload_kbps=1000, download_kbps=2000)
-        self.url = reverse("company", args=[self.a.pk])
+        self.url = reverse("company", args=[self.a.company_id])
         self.client.force_login(self.owner)
 
     def subscriber_data(self, **kwargs):
@@ -193,7 +193,7 @@ class CompanyManagementTests(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, "Local plan")
         self.assertNotContains(response, "Private foreign plan")
-        self.assertEqual(self.client.get(reverse("company", args=[self.b.pk])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("company", args=[self.b.company_id])).status_code, 403)
         response = self.client.post(self.url, {"kind": "plan", "name": "New plan", "upload_kbps": 5000, "download_kbps": 10000})
         self.assertRedirects(response, self.url)
         plan = Plan.objects.get(name="New plan")
@@ -279,7 +279,7 @@ class CompanyManagementTests(TestCase):
     def test_company_suspension_is_scoped_post_only_and_idempotent(self):
         self.client.post(self.url, self.subscriber_data())
         subscriber = Subscriber.objects.get()
-        url = reverse("company-suspend", args=[self.a.pk, subscriber.pk])
+        url = reverse("company-suspend", args=[self.a.company_id, subscriber.pk])
         self.assertEqual(self.client.get(url).status_code, 405)
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.force_login(self.owner)
@@ -287,9 +287,9 @@ class CompanyManagementTests(TestCase):
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.post(url).status_code, 403)
         self.client.force_login(self.owner)
-        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.b.pk, subscriber.pk])).status_code, 403)
+        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.b.company_id, subscriber.pk])).status_code, 403)
         foreign = Subscriber.objects.create(tenant=self.b, plan=self.foreign_plan, username="foreign", password_hash="!", expires_at=timezone.now())
-        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.a.pk, foreign.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.a.company_id, foreign.pk])).status_code, 404)
         self.assertRedirects(self.client.post(url), self.url)
         self.assertRedirects(self.client.post(url), self.url)
         subscriber.refresh_from_db()

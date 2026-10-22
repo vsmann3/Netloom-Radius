@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -42,9 +43,10 @@ def dashboard(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def company(request, tenant_id):
+def company(request, company_id=None, tenant_id=None):
+    tenant = get_object_or_404(Tenant, company_id=company_id) if company_id is not None else get_object_or_404(Tenant, pk=tenant_id)
+    tenant_id = tenant.pk
     membership = require_membership(request.user, tenant_id, write=request.method == "POST")
-    tenant = get_object_or_404(Tenant, pk=tenant_id)
     kind = request.POST.get("kind") if request.method == "POST" else None
     plan_form = PlanForm(request.POST if kind == "plan" else None, tenant_id=tenant_id)
     subscriber_form = SubscriberForm(request.POST if kind == "subscriber" else None, tenant_id=tenant_id)
@@ -71,7 +73,7 @@ def company(request, tenant_id):
             except IntegrityError:
                 form.add_error(None, "The record conflicts with existing data. Check the details and try again.")
             else:
-                return redirect("company", tenant_id=tenant_id)
+                return redirect("company", company_id=tenant.company_id)
     return render(request, "company.html", {
         "tenant": tenant, "can_write": membership.role in {"owner", "operator"},
         "membership": membership,
@@ -86,6 +88,19 @@ def company(request, tenant_id):
         "records": Paginator(Subscriber.objects.filter(tenant_id=tenant_id).select_related("plan").order_by("username", "id"), 100).get_page(request.GET.get("page")),
         "plan_form": plan_form, "subscriber_form": subscriber_form, "nas_form": nas_form,
     })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def company_legacy(request, tenant_id):
+    require_membership(request.user, tenant_id, write=request.method == "POST")
+    if request.method == "POST":
+        return company(request, tenant_id=tenant_id)
+    tenant = get_object_or_404(Tenant, pk=tenant_id)
+    target = reverse("company", args=[tenant.company_id])
+    if request.META.get("QUERY_STRING"):
+        target += "?" + request.META["QUERY_STRING"]
+    return redirect(target, permanent=True)
 
 
 @login_required
@@ -107,6 +122,8 @@ def suspend(request, tenant_id, subscriber_id):
 
 @login_required
 @require_POST
-def suspend_from_company(request, tenant_id, subscriber_id):
+def suspend_from_company(request, subscriber_id, company_id=None, tenant_id=None):
+    tenant = get_object_or_404(Tenant, company_id=company_id) if company_id is not None else get_object_or_404(Tenant, pk=tenant_id)
+    tenant_id = tenant.pk
     suspend_subscriber(actor=request.user, tenant_id=tenant_id, subscriber_id=subscriber_id)
-    return redirect("company", tenant_id=tenant_id)
+    return redirect("company", company_id=tenant.company_id)

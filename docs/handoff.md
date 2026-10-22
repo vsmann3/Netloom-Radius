@@ -2,6 +2,15 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+User confirmed the Tabler dashboard works on the VM. User then requested mandatory
+numeric company/franchise IDs of at least five digits and shorter company URLs.
+Implemented company_id and migration 0004 with backfill, numeric browser routes,
+authorized UUID redirects and visible IDs. Internal UUIDs and tenant API stay intact.
+Local suite: 44 tests, 38 passed, 6 MariaDB-only skipped. This increment requires
+a real migration before web recreation; do not reuse the no-migration dashboard
+deployment command. See company-numbers.md. Franchise numbering is mandatory when
+the franchise model is built; franchise features are not implemented yet.
+
 The user requested a prebuilt dashboard instead of the basic pages. A Tabler 1.6.1
 UI is implemented with local vendored CSS, responsive templates, company switching,
 scoped counts and WhiteNoise 6.12.0 static serving. Local 40-test suite passed

@@ -22,6 +22,9 @@ subscribers, NAS registrations, plans, staff permissions and finances. Central s
 may receive explicit memberships across companies; no implicit superuser access.
 Each company needs multiple franchises with customer ownership, staff permissions,
 wallets, recharge balances, commission/revenue sharing and settlements.
+Every company and franchise must have an automatically assigned permanent numeric
+public ID of at least five digits. Keep UUID relationships internally and use public
+numbers in browser company URLs; see company-numbers.md.
 
 Validate on the user's network before offering the same codebase to fellow ISPs
 for paid hosting, setup, support or software access. Separate installations remain
