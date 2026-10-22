@@ -44,6 +44,13 @@ form or document store in Radius. Radius owns AAA/network service management and
 the previously agreed operational/financial workflows. Integrate only through
 authenticated, tenant/franchise-scoped APIs; never share databases or browser logins.
 
+Confirmed activation policy: CAF approval triggers initial service activation with
+valid technical inputs, without an additional payment/wallet gate. CAF assigns the
+initial username/password; Radius reserves/validates the username and hashes the
+password received through a dedicated provisioning API. CAF purges its recoverable
+initial password after durable credential acknowledgement. Generic profile events
+remain credential-free. Radius Add customer opens the real CAF form in a new tab.
+
 CAF customerId is the shared main customer identifier, transported as a 10-digit
 string and never independently allocated here. Internal subscriber UUIDs identify
 network services; company/franchise numbers remain separate organizational IDs.

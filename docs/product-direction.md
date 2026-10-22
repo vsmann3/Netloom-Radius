@@ -14,8 +14,8 @@ Confirmed company names:
 | NorthNet | `northnet` |
 | VM Net | `vm-net` |
 
-The first pilot company and owner memberships are not yet specified. These names
-are onboarding requirements, not confirmation that live tenants have been created.
+All three companies were onboarded on the VM with explicit owner memberships for
+the existing panel account suradmin. The first live network pilot is not selected.
 
 Operate the user's three companies first. Each company is a tenant with separate
 subscribers, NAS registrations, plans, staff permissions and finances. Central staff
@@ -31,6 +31,14 @@ Reuse its unique 10-digit customerId as the main customer identifier in Radius;
 do not build eCAF forms or a competing customer-number allocator here. Company and
 franchise public IDs are distinct from customer IDs. See integrations/ecaf-api-contract.md
 for the proposed API-only boundary and developer handoff.
+
+Confirmed onboarding journeys: CAF fetches company-scoped plans from Radius,
+assigns username and initial password, then provisions Radius after CAF approval.
+No additional payment/wallet gate applies to initial internet activation. Radius
+reserves/validates usernames and stores PAP-compatible password hashes. Add customer
+from Radius opens the same CAF form in a new tab with safe context/return navigation.
+CAF handles self-service. The same 10-digit customer ID is retained for all customer
+operations; local service UUIDs distinguish connections without renumbering customers.
 
 Validate on the user's network before offering the same codebase to fellow ISPs
 for paid hosting, setup, support or software access. Separate installations remain

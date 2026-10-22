@@ -2,6 +2,16 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+User confirmed both onboarding journeys: company selection in CAF fetches Radius
+plans; CAF assigns username, initial password and 10-digit customer/account ID;
+CAF approval triggers initial activation (NO extra payment/wallet gate). Radius
+validates/reserves usernames, accepts initial credentials securely and hashes them.
+Add customer from Radius opens the same CAF form in a new tab with safe context/
+return link; CAF owns self-service. Keep the SAME 10-digit ID for ALL customer ops.
+Updated integration contract and dedicated sensitive provisioning schema reflect
+this confirmation. Generic profile events remain credential-free. Endpoints are
+still design artifacts, not implemented/enabled. Do not claim sync is working yet.
+
 New boundary: user has another AI developer handling vsmann3/caf-portal. This agent
 owns Radius/AAA and network operations; do not build a duplicate eCAF onboarding
 form or document workflow. API-only integration. Use CAF's 10-digit customerId as

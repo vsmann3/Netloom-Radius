@@ -1,7 +1,24 @@
 # CAF Portal ↔ Netloom Radius API integration proposal
 
-Status: proposed contract for both developers; endpoints below are NOT implemented
-or enabled by this document. No CAF repository changes were made here.
+Status: customer journeys/ownership confirmed by the user on 2026-10-22. API details
+below are the developer contract to implement; endpoints are NOT implemented or
+enabled by this document. No CAF repository changes were made here.
+
+## Confirmed user decisions (supersede earlier proposal)
+
+- New internet service activates after CAF approval, not on draft/submission. Do
+  not add a payment/wallet authorization prerequisite to initial activation.
+- Selecting a company in CAF fetches that company's plans from Radius.
+- CAF assigns the username and collects/generates the initial password; Radius
+  reserves/validates the username, receives the password over the dedicated secure
+  provisioning API and stores its own PAP-compatible hash.
+- From Radius, Add customer opens the SAME CAF form in a new tab with secure
+  company/franchise context and a return link. No copied form or create-in-Radius-
+  then-duplicate-in-CAF flow. CAF creates the customer, then provisions Radius.
+- CAF exclusively handles customer self-service behavior and authorization.
+- Keep the same CAF-issued 10-digit customer/account ID for ALL operations over
+  that customer's lifetime: corrections, renewals, additional connections,
+  relocations and transfers. Never issue a new customer ID for a new operation.
 
 Reviewed CAF main commit: `05dbe819ff52a5fb022965a1113bd94981b2f167`.
 Repository: https://github.com/vsmann3/caf-portal
@@ -12,7 +29,7 @@ CAF developer should check for changes since this commit before implementation.
 | CAF Portal owns | Netloom Radius owns |
 | --- | --- |
 | Customer ID issuance and customer/CAF identity | Local service/subscriber UUID and network account state |
-| Applicant/contact/installation details | PPPoE username, credential provisioning and password hashes |
+| Applicant/contact/installation details; initial username/password assignment | Username reservation/validation, credential acceptance and password hashes |
 | Identity documents, photos, signatures, signed CAF/PDF | Plans, rate attributes, expiry, suspension and Disconnect |
 | Review, approval, rejection, approved snapshots | NAS registrations/secrets, authentication and accounting |
 | Company/franchise onboarding metadata and external references | Operational roles, franchise wallet/renewal/commission rules already in scope |
@@ -66,7 +83,7 @@ Keep these concepts separate:
 | company_ref.id / franchise_ref.id | CAF | External CUID references |
 | Radius company_id (5+ digits) / tenant UUID | Radius | Public company navigation / internal ownership |
 | subscriber/service UUID | Radius | Individual network connection; not a new customer number |
-| PPPoE username | Radius | Authentication name; may differ from customer_id |
+| PPPoE username | CAF assigns; Radius reserves/validates | Authentication name; may differ from customer_id |
 
 Maintain reviewed bindings `(integration source, CAF company CUID) → Radius tenant`
 and `(source, CAF franchise CUID) → Radius franchise in that tenant`. Company codes
@@ -80,29 +97,37 @@ customer ID with a different company/franchise binding; transfers require an
 explicit reviewed transfer workflow. Unknown-source IDs cannot merge by name/mobile.
 
 Design the link for one customer with multiple services even if the first rollout
-allows only one. Important CAF question: customerId is currently unique per draft /
-application, rather than a separate reusable Customer entity. Before supporting a
-second CAF/relocation/service for the same customer, define reuse of the original
-customer ID instead of allocating a new customer number. Corrections to an existing
-CAF already preserve its ID; new CAFs are a separate case.
+allows only one. Required CAF change: customerId is currently unique per draft /
+application, rather than a separate reusable Customer entity. Reuse the existing
+CustomerNumber/customer master across subsequent CAFs/operations; a new application
+must not allocate a new customer number for an existing customer. Corrections,
+renewals, relocations, transfers and additional services retain that same ID.
 
 Existing Radius accounts without customer_id must be linked explicitly; never
 auto-merge by username, phone or name, and never fabricate CAF IDs for them.
 
 ## 4. Normal workflow
 
-1. Operator opens the real CAF Portal (new CAF or an existing customer link).
-2. CAF owns data capture, document uploads and review.
+1. Operator opens CAF directly, or Add customer in Radius opens the same CAF form
+   in a new tab with server-validated context/return destination. Do not put secrets
+   or transferable authorization in a companyId query parameter.
+2. CAF owns data capture, document uploads, customer self-service and review. Company
+   selection fetches scoped Radius plans. CAF assigns customer_id and an initial
+   username/password; reserve the username in Radius for that service request.
 3. Approval + immutable approved integration snapshot + outgoing event are committed
    in ONE PostgreSQL transaction. Even if delivery is disabled, retain the event.
-4. A CAF background worker delivers the event below to Radius with a service token.
+4. A CAF background worker delivers the approved provisioning bundle described
+   below to Radius with a service token. Generic profile events remain non-secret.
 5. Radius validates source scope, company/franchise bindings, event identity,
    customer ID and version, then durably stores its inbox receipt and returns 202.
-6. Radius processes the inbox into a CustomerLink/profile projection. This can be
-   `applied` while the network service remains `pending_service_setup`.
-7. Radius creates/enables network service only after a valid local plan, username,
-   credentials, expiry and required commercial authorization are present. CAF
-   approval alone must not invent a paid renewal or activate an incomplete account.
+6. Radius imports the approved CustomerLink/profile, validates the reserved username
+   and selected local plan, and hashes the initial password before durable storage.
+7. CAF approval triggers service provisioning/activation once technical validation
+   succeeds. No additional payment/wallet gate applies to initial activation.
+   Plan validity/expiry rules must be configured in Radius and exposed in its plan
+   contract; do not fabricate an expiry. Invalid/missing technical inputs report
+   blocked/failed rather than falsely reporting active. The current rates-only
+   Plan model needs validity rules before this automatic path can go live.
 8. CAF polls the Radius receipt/service endpoint to show “Queued”, “Customer linked”,
    “Service setup required”, “Active”, or an actionable failure. 202 is not active.
 
@@ -136,14 +161,18 @@ and has_more. Enforce 1–100 item page sizes. Snapshot lookup must support the
 | POST `/api/integrations/ecaf/v1/events` | Persist an incoming approval event; return receipt |
 | GET `/api/integrations/ecaf/v1/events/{event_id}` | Receipt and processing outcome |
 | GET `/api/integrations/ecaf/v1/customers/{customer_id}/services` | Scoped network-service statuses and safe references |
-| GET `/api/integrations/ecaf/v1/companies/{radius_company_id}/plans` | Plan UUID, name and upload/download rates for an optional CAF selector |
+| GET `/api/integrations/ecaf/v1/companies/{radius_company_id}/plans` | Company-scoped plan UUID, name, rates and validity rules for the CAF selector |
+| POST `/api/integrations/ecaf/v1/username-reservations` | Reserve a CAF-chosen username for a customer/service request in its mapped company |
+| POST `/api/integrations/ecaf/v1/provisionings` | Accept approval + selected plan + initial username/password; provision once |
 
-An optional username availability/reservation API can follow. CAF's current username
-generator checks only its own database, so it cannot guarantee availability in
-Radius. Radius must atomically reject a conflict; never overwrite another account.
-Do not assume planName/bandwidth text identifies a Radius plan. If the CAF UI offers
-plan selection, it must use the Radius plan UUID returned by the scoped plan API;
-operational activation still follows Radius authorization and commercial rules.
+Username reservation is part of the confirmed flow. CAF's current username generator
+checks only its own database, so it cannot guarantee availability in Radius. Reserve
+using customer_id, a stable service_request_id and the username; return reservation_id
+and expires_at. Revalidate/renew the reservation if review outlasts it; on conflict,
+return an actionable error rather than overwriting or silently changing the username.
+Radius must atomically validate reservation/username uniqueness when provisioning.
+The company selection MUST use the scoped plan API and pass its plan UUID, not a
+planName/bandwidth string. Plan lookup must include validity rules for activation.
 
 Do not reuse the existing Radius staff session APIs for these endpoints.
 
@@ -160,7 +189,40 @@ address remains in CAF initially; add a minimum agreed service-location projecti
 only if Radius needs it for a concrete operational workflow.
 
 NEVER send idNumber, idProofType, DOB, document bytes/keys, signed PDFs, portal
-passwords, Radius passwords/hashes, NAS shared secrets or browser session tokens.
+passwords, NAS shared secrets or browser session tokens. Generic profile/approval
+events NEVER carry network passwords. The initial network password crosses only
+the dedicated provisioning endpoint described next; no password hashes cross.
+
+### Initial service provisioning bundle
+
+`POST /api/integrations/ecaf/v1/provisionings` accepts `approval` (the event above)
+and `service` (stable service_request_id, reservation_id, username, plan_id and
+initial_password). See ecaf-provisioning.schema.json / ecaf-provisioning.example.json.
+Use the approval event_id as Idempotency-Key, bound to the authenticated source.
+Use separate idempotency namespaces for profile-event and provisioning operations:
+`(source, operation, event_id)`. Sharing an approval reference across those two
+endpoints is not a payload-conflict retry. Also enforce uniqueness on
+`(source, service_request_id)` so a second event cannot duplicate the same connection.
+The service request ID stays stable for one connection through draft, review and
+retry; another connection gets another service request ID with the SAME customer ID.
+
+Hash the password with Radius's configured PBKDF2-SHA256 policy before committing.
+Store plaintext neither in the Radius inbox nor request/audit/response logs. The
+accepted record contains safe metadata and a reference to the credential stored in
+the dedicated subscriber credential field. A retry never resets an existing password.
+For this sensitive endpoint use a server-keyed HMAC-SHA256 over the canonical request
+as its replay fingerprint, not an unkeyed digest that permits guessing the password.
+
+CAF may retain the initial password only in an encrypted, access-restricted pending
+delivery record so retries can work. Delete that recoverable value after Radius
+acknowledges `credential_accepted: true`, meaning its hash and receipt are durably
+committed. An ordinary event 202 does NOT acknowledge credential acceptance. Never
+generate a different password on a retry or email it in automated welcome messages.
+Dead-letter retries have bounded encrypted retention and a deliberate recovery path.
+
+Radius returns the same receipt on matching retries and 409 on a changed request
+under the same key. The network password must satisfy the agreed password policy
+and PAP's 128-UTF-8-byte limit; CAF validates for usability, Radius enforces it.
 
 `customer_version` is a new monotonic integration version for this customer,
 incremented on every integration-relevant change in a transaction. Existing CAF
@@ -214,7 +276,7 @@ status only. No passwords, arbitrary document URLs or raw internal errors.
 - Bind tokens to explicit external company/franchise scopes, integration source
   and operations (e.g. events:write, receipts:read, customers:read, plans:read).
   A company/franchise ID in JSON or a URL never enlarges those grants.
-- Persist inbox uniqueness on `(source, event_id)`, payload digest and scope, with
+- Persist inbox uniqueness on `(source, operation, event_id)`, payload digest and scope, with
   a stable receipt. A matching retry returns its current receipt without repeating
   side effects; the same ID with a changed payload returns 409. Hash canonical
   validated JSON with SHA-256 over RFC 8785 JCS UTF-8 bytes; transport whitespace/key
@@ -268,11 +330,14 @@ CAF developer:
 4. Commit approval/snapshot/outbox atomically; implement worker, retry, receipt polling
    and change-feed reconciliation. Do not persist broad identity payloads in RadiusSync.
 5. Make integration secrets write-only/redacted and preserve customer IDs on retries.
+6. Use Radius plan/reservation APIs, deliver initial credentials through provisioning,
+   and implement the same CAF form entry from Radius. CAF owns self-service behavior.
 
 Radius developer (this repository):
 1. Implement scoped integration credentials, external company/franchise mappings,
    CustomerLink/customer_id projection and inbox processing.
-2. Implement event receipt/status, customer service read and scoped plan endpoints.
+2. Implement receipt/status, customer service reads, scoped plans/validity, username
+   reservations and approved provisioning with one-time credential acceptance.
 3. Display/filter the CAF 10-digit ID as the main customer identifier in the users
    directory. Preserve local service UUIDs and existing usernames/relationships.
 4. Replace customer onboarding entry with CAF links/approved-customer selection;
@@ -283,5 +348,6 @@ Joint acceptance: one approved CAF imports once; retries/timeouts do not duplica
 out-of-order revisions do not roll back data; cross-company/franchise requests fail;
 unknown mappings block; disabled/no-op never reports success; rejected/draft data
 cannot activate; revocation/reapproval policies hold; existing suspended services
-stay suspended; no passwords/docs/ID-proof data cross; outages recover through
+stay suspended; no docs/ID-proof data cross; only the initial network password
+crosses its designated endpoint and is never retained in logs; outages recover through
 reconciliation; main customer ID is identical on both UIs.
