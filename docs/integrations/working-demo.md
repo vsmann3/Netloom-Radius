@@ -51,8 +51,18 @@ Do not present the demo as completion of those wider product features.
 Run with the project virtual environment:
 
 ```powershell
+.venv/Scripts/python.exe scripts/prepare_demo_postgres.py
 .venv/Scripts/python.exe scripts/run_caf_demo.py
 ```
+
+The first command is an optional Windows helper for CAF's independent PostgreSQL16
+database. It downloads the official EDB portable archive into ignored `.tools`,
+checks its pinned SHA256, extracts server files, and starts a cluster ONLY on
+127.0.0.1:18130. It installs no Windows service. The dedicated `caf_demo_netloom`
+database/app role and private `.tools/integration-demo/caf-database.json` let the
+CAF developer run migrations/seed and its Node app locally. No database reset,
+production connection, automatic CAF merge or application deployment is performed.
+Use CAF's own working-model launch instructions for its app on18110.
 
 This creates `.tools/integration-demo/` (ignored): a NEW SQLite database, separate
 signing/fingerprint keys, synthetic company/franchise/plans, private connection

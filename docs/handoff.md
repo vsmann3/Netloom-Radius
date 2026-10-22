@@ -2,6 +2,26 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+Owner now requests a working CAF/Radius model, not more contract-only exchanges.
+Radius actual reservations, renewal, v2 provisioning/receipt, permanent customer
+links and customer-ID directory/form handoff implemented at157edcb, with migration
+and SQL-test fixes8fcc5e8/41f41f2/acd8e83 and canonical retry/password testse2a35c1.
+CI39755317184 at e2a35c1 SUCCESS (application/MariaDB/stock SQL-PAP); prioracd8e83
+CI also succeeds including real competing-delivery acceptance test. Latest local
+suite85 total:78 pass7 SQL-specific skipped (new canonical case included).
+
+Local Radius demo running127.0.0.1:18120; PID tracked in ignored
+.tools/integration-demo/server.pid. Separate SQLite database; noNAS. Default STAGED
+to match CAF worker; optional synthetic-active flag remains coordinated/demo-only.
+Private access.txt and connection.json in same ignored folder (never print tokens).
+Mapped sourcecaf-portal-demo, CAF companynetloom-demo-company/franchisenetloom-demo-franchise,
+Radiuscompany10002, two published plans. Actual HTTP catalog and authenticated UI
+smoke pass. Portable official PostgreSQL16.15 now running127.0.0.1:18130 with isolated
+caf_demo_netloom DB; private caf-database.json passed to CAF peer via file reference.
+CAF is implementing actual form/client/worker in its own repo; localCAF18110 not
+yet confirmed running, and joint end-to-end acceptance is NOT yet complete.
+Continue to a working two-app demonstration and ask Vikas to test before acceptance.
+
 Owner acceptance rule: after every testable milestone, ask Vikas to test with
 environment, exact safe steps and expected results; await feedback before marking
 accepted. Source/CI success is not deployment or owner acceptance.
