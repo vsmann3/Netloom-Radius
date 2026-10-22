@@ -1,5 +1,27 @@
 # Resume here - saved 2026-10-21
 
+## Latest confirmed direction - 2026-10-22
+
+The user confirmed proceeding with Django for their own three companies first,
+with multiple franchises and full wallet/recharge/commission/revenue-sharing needs.
+Later offer the proven software to fellow ISPs. See [product direction](product-direction.md).
+This supersedes the reuse-first pause below. A local company-management increment
+adds scoped plan/subscriber creation, paginated listing, suspension and owner-only
+disabled NAS registration; new subscriber credentials remain disabled until
+provisioned. Local suite: 26 passed, 5 MariaDB-only skipped; no migration needed.
+Deployment and live membership checks remain pending;
+SSH works but Docker access requires administrative access.
+
+## Superseding direction - 2026-10-22
+
+The user chose reuse of established software over building a new custom product.
+Pause new Django management features. Evaluate daloRADIUS, allow separate ISP
+installations, and require demonstrated multiple-franchise support before selection.
+See [reuse-first direction](reuse-first.md) for findings and acceptance requirements.
+Existing deployment remains intact. The user confirmed mandatory franchise wallets,
+recharge balances, commissions and revenue sharing. Evaluate existing platforms
+against these requirements. The older custom-panel next steps below are superseded.
+
 The user ended today's session and confirmed successful login at
 https://radius.netnoc.in. Resume from this checkpoint tomorrow. This is a project
 conversation summary, not a verbatim export of the chat. No credentials are stored here.

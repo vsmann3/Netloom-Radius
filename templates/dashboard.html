@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Netloom Radius</title></head>
 <body><main><h1>Netloom Radius</h1><p>Signed in as {{ user.get_username }}</p>
-<h2>Your ISPs</h2><ul>{% for membership in memberships %}<li>{{ membership.tenant.name }} · {{ membership.get_role_display }} · <a href="{% url 'subscribers' membership.tenant_id %}">View subscribers</a></li>{% empty %}<li>No ISP access has been assigned.</li>{% endfor %}</ul>
+<h2>Your ISPs</h2><ul>{% for membership in memberships %}<li>{{ membership.tenant.name }} &middot; {{ membership.get_role_display }} &middot; <a href="{% url 'company' membership.tenant_id %}">Manage company</a></li>{% empty %}<li>No ISP access has been assigned.</li>{% endfor %}</ul>
 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
 </main></body></html>

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ tenant.name }} | Netloom Radius</title></head>
+<body><main>
+<nav><a href="{% url 'dashboard' %}">Your companies</a></nav>
+<h1>{{ tenant.name }}</h1>
+<h2>Plans</h2>
+<table><thead><tr><th>Name</th><th>Upload (kbps)</th><th>Download (kbps)</th></tr></thead>
+<tbody>{% for plan in plans %}<tr><td>{{ plan.name }}</td><td>{{ plan.upload_kbps }}</td><td>{{ plan.download_kbps }}</td></tr>{% empty %}<tr><td colspan="3">No plans yet.</td></tr>{% endfor %}</tbody></table>
+{% if can_write %}<h3>Create plan</h3><form method="post">{% csrf_token %}<input type="hidden" name="kind" value="plan">{{ plan_form.as_p }}<button type="submit">Create plan</button></form>{% endif %}
+<h2>Subscribers</h2>
+<p>{{ records.paginator.count }} subscribers. Dates use UTC. Suspension blocks future authentication; active-session Disconnect delivery is pending.</p>
+<table><thead><tr><th>Username</th><th>Plan</th><th>Status</th><th>Expires (UTC)</th>{% if can_write %}<th>Actions</th>{% endif %}</tr></thead>
+<tbody>{% for record in records %}<tr><td>{{ record.username }}</td><td>{{ record.plan.name }}</td><td>{{ record.get_status_display }}</td><td>{{ record.expires_at }}</td>{% if can_write %}<td>{% if record.status == 'active' %}<form method="post" action="{% url 'company-suspend' tenant.id record.id %}">{% csrf_token %}<button type="submit">Suspend {{ record.username }}</button></form>{% endif %}</td>{% endif %}</tr>{% empty %}<tr><td colspan="5">No subscribers yet.</td></tr>{% endfor %}</tbody></table>
+<nav aria-label="Subscriber pages">{% if records.has_previous %}<a href="?page={{ records.previous_page_number }}">Previous</a>{% endif %} Page {{ records.number }} of {{ records.paginator.num_pages }} {% if records.has_next %}<a href="?page={{ records.next_page_number }}">Next</a>{% endif %}</nav>
+{% if can_write %}<h3>Create subscriber</h3><p>New subscribers cannot authenticate until an authorized operator provisions their password.</p><form method="post">{% csrf_token %}<input type="hidden" name="kind" value="subscriber">{{ subscriber_form.as_p }}<button type="submit">Create subscriber</button></form>{% endif %}
+<h2>Routers (NAS)</h2>
+<table><thead><tr><th>Name</th><th>RADIUS source address</th><th>Authorization</th></tr></thead>
+<tbody>{% for device in devices %}<tr><td>{{ device.name }}</td><td>{{ device.source_ip }}</td><td>{% if device.enabled %}Enabled{% else %}Disabled{% endif %}</td></tr>{% empty %}<tr><td colspan="3">No routers registered.</td></tr>{% endfor %}</tbody></table>
+{% if can_manage_nas %}<h3>Register router</h3><p>Registration starts disabled. Activation requires shared-secret provisioning and a validated FreeRADIUS configuration.</p><form method="post">{% csrf_token %}<input type="hidden" name="kind" value="nas">{{ nas_form.as_p }}<button type="submit">Register router</button></form>{% endif %}
+</main></body></html>

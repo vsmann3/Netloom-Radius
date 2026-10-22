@@ -1,5 +1,19 @@
 # Development and current implementation
 
+## Management increment - 2026-10-22
+
+Local company pages now list plans/subscribers and allow owners/operators to create
+them with atomic audit records. Viewer access is read-only; plan selection and
+records are tenant-scoped. New credentials are disabled until the existing password
+command provisions them. Owners can register NAS devices, initially disabled, with
+server-generated secret references; the panel never accepts a shared secret.
+Subscribers are paginated and can be suspended through CSRF-protected forms that
+use the existing audited suspension/outbox service. Disconnect delivery remains
+pending. This increment is not deployed yet. Local suite: 31 tests,
+26 passed and 5 MariaDB-only tests skipped; no model migration required.
+See [confirmed product direction](product-direction.md) for the three-company and
+franchise rollout scope. Historical feature-status wording below predates this increment.
+
 ## Implemented foundation
 
 - Django 5.2.18 with session login, a minimal ISP membership page, a scoped subscriber-list API and a CSRF-protected suspension API.

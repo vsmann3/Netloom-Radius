@@ -172,6 +172,143 @@ class TenantIsolationTests(TestCase):
             call_command("seed_radius_integration")
 
 
+class CompanyManagementTests(TestCase):
+    def setUp(self):
+        self.a = Tenant.objects.create(slug="company-a", name="Company A")
+        self.b = Tenant.objects.create(slug="company-b", name="Company B")
+        self.owner = get_user_model().objects.create_user("company-owner")
+        self.viewer = get_user_model().objects.create_user("company-viewer")
+        Membership.objects.create(user=self.owner, tenant=self.a, role="owner")
+        Membership.objects.create(user=self.viewer, tenant=self.a, role="viewer")
+        self.plan = Plan.objects.create(tenant=self.a, name="Local plan", upload_kbps=1000, download_kbps=2000)
+        self.foreign_plan = Plan.objects.create(tenant=self.b, name="Private foreign plan", upload_kbps=1000, download_kbps=2000)
+        self.url = reverse("company", args=[self.a.pk])
+        self.client.force_login(self.owner)
+
+    def subscriber_data(self, **kwargs):
+        return {"kind": "subscriber", "username": "new-user", "plan": str(self.plan.pk),
+                "expires_at": (timezone.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M"), **kwargs}
+
+    def test_company_page_and_plan_creation_are_scoped_and_audited(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "Local plan")
+        self.assertNotContains(response, "Private foreign plan")
+        self.assertEqual(self.client.get(reverse("company", args=[self.b.pk])).status_code, 403)
+        response = self.client.post(self.url, {"kind": "plan", "name": "New plan", "upload_kbps": 5000, "download_kbps": 10000})
+        self.assertRedirects(response, self.url)
+        plan = Plan.objects.get(name="New plan")
+        self.assertEqual(plan.tenant_id, self.a.pk)
+        self.assertEqual(AuditEvent.objects.get().target_id, plan.pk)
+        response = self.client.post(self.url, {"kind": "plan", "name": "New plan", "upload_kbps": 5000, "download_kbps": 10000})
+        self.assertContains(response, "already exists")
+
+    def test_subscriber_creation_rejects_foreign_plan_and_disables_password(self):
+        response = self.client.post(self.url, self.subscriber_data(plan=str(self.foreign_plan.pk)))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Subscriber.objects.exists())
+        response = self.client.post(self.url, self.subscriber_data())
+        self.assertRedirects(response, self.url)
+        subscriber = Subscriber.objects.get()
+        self.assertEqual(subscriber.tenant_id, self.a.pk)
+        self.assertTrue(subscriber.password_hash.startswith("!"))
+        self.assertEqual(AuditEvent.objects.get().action, "subscriber.create")
+        response = self.client.post(self.url, self.subscriber_data(username="NEW-USER"))
+        self.assertContains(response, "already exists")
+        self.assertEqual(Subscriber.objects.count(), 1)
+
+    def test_viewer_csrf_and_invalid_inputs(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        self.assertEqual(csrf_client.post(self.url, self.subscriber_data()).status_code, 403)
+        self.client.force_login(self.viewer)
+        self.assertNotContains(self.client.get(self.url), "Create subscriber")
+        self.assertEqual(self.client.post(self.url, self.subscriber_data()).status_code, 403)
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.post(self.url, {"kind": "unknown"}).status_code, 400)
+        self.client.post(self.url, self.subscriber_data(expires_at="2000-01-01T00:00"))
+        self.assertFalse(Subscriber.objects.exists())
+
+    def test_failed_audit_rolls_back_subscriber_creation(self):
+        with patch("core.views.AuditEvent.objects.create", side_effect=RuntimeError("audit failed")):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.url, self.subscriber_data())
+        self.assertFalse(Subscriber.objects.exists())
+
+    def test_router_registration_is_disabled_scoped_and_audited(self):
+        response = self.client.post(self.url, {"kind": "nas", "name": "Branch router",
+                                               "source_ip": "192.0.2.80", "enabled": "on",
+                                               "tenant": str(self.b.pk), "secret_ref": "attacker"})
+        self.assertRedirects(response, self.url)
+        nas = NAS.objects.get()
+        self.assertEqual(nas.tenant_id, self.a.pk)
+        self.assertFalse(nas.enabled)
+        self.assertEqual(nas.secret_ref, f"nas-{nas.id.hex}")
+        self.assertEqual(AuditEvent.objects.get().action, "nas.create")
+        NAS.objects.create(tenant=self.b, name="Other company router", source_ip="192.0.2.81", secret_ref="private-reference")
+        response = self.client.get(self.url)
+        self.assertContains(response, "Branch router")
+        self.assertNotContains(response, "Other company router")
+        self.assertNotContains(response, nas.secret_ref)
+
+    def test_router_duplicate_address_does_not_disclose_company(self):
+        NAS.objects.create(tenant=self.b, name="Private router", source_ip="192.0.2.81", secret_ref="private-reference")
+        response = self.client.post(self.url, {"kind": "nas", "name": "New router", "source_ip": "192.0.2.81"})
+        self.assertContains(response, "This address is unavailable for registration.")
+        self.assertNotContains(response, "Private router")
+        self.assertEqual(NAS.objects.count(), 1)
+        self.assertFalse(AuditEvent.objects.exists())
+        self.client.post(self.url, {"kind": "nas", "name": "Invalid", "source_ip": "2001:db8::1"})
+        self.assertEqual(NAS.objects.count(), 1)
+
+    def test_router_registration_requires_owner_and_csrf(self):
+        Membership.objects.filter(user=self.owner, tenant=self.a).update(role="operator")
+        self.assertNotContains(self.client.get(self.url), "Register router")
+        self.assertEqual(self.client.post(self.url, {"kind": "nas", "name": "Denied", "source_ip": "192.0.2.80"}).status_code, 403)
+        Membership.objects.filter(user=self.owner, tenant=self.a).update(role="owner")
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        self.assertEqual(csrf_client.post(self.url, {"kind": "nas", "name": "Denied", "source_ip": "192.0.2.80"}).status_code, 403)
+        self.assertFalse(NAS.objects.exists())
+
+    def test_router_audit_failure_rolls_back_registration(self):
+        with patch("core.views.AuditEvent.objects.create", side_effect=RuntimeError("audit failed")):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.url, {"kind": "nas", "name": "Rolled back", "source_ip": "192.0.2.80"})
+        self.assertFalse(NAS.objects.exists())
+
+    def test_company_suspension_is_scoped_post_only_and_idempotent(self):
+        self.client.post(self.url, self.subscriber_data())
+        subscriber = Subscriber.objects.get()
+        url = reverse("company-suspend", args=[self.a.pk, subscriber.pk])
+        self.assertEqual(self.client.get(url).status_code, 405)
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        self.assertEqual(csrf_client.post(url).status_code, 403)
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.b.pk, subscriber.pk])).status_code, 403)
+        foreign = Subscriber.objects.create(tenant=self.b, plan=self.foreign_plan, username="foreign", password_hash="!", expires_at=timezone.now())
+        self.assertEqual(self.client.post(reverse("company-suspend", args=[self.a.pk, foreign.pk])).status_code, 404)
+        self.assertRedirects(self.client.post(url), self.url)
+        self.assertRedirects(self.client.post(url), self.url)
+        subscriber.refresh_from_db()
+        self.assertEqual(subscriber.status, "suspended")
+        self.assertEqual(AuditEvent.objects.filter(action="subscriber.suspend").count(), 1)
+
+    def test_subscriber_pagination(self):
+        Subscriber.objects.bulk_create([
+            Subscriber(tenant=self.a, plan=self.plan, username=f"page-{index:03}", password_hash="!",
+                       expires_at=timezone.now()) for index in range(101)
+        ])
+        first = self.client.get(self.url)
+        self.assertEqual(len(first.context["records"]), 100)
+        self.assertNotContains(first, "page-100")
+        second = self.client.get(self.url, {"page": 2})
+        self.assertEqual(len(second.context["records"]), 1)
+        self.assertContains(second, "page-100")
+
+
 @skipUnless(connection.vendor == "mysql", "Requires MariaDB authorization view")
 class RadiusSQLTests(TestCase):
     def setUp(self):

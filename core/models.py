@@ -44,6 +44,9 @@ class Plan(TenantRecord):
     upload_kbps = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     download_kbps = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["tenant", "name"], name="plan_tenant_name"),
