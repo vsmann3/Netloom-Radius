@@ -101,9 +101,15 @@ Reproduce with synthetic data only (creates another test application):
 ```
 
 Safe results are in ignored `.tools/integration-demo/joint-http-result.json`.
-These are actual API/DB results, not browser or owner acceptance. CAF's runtime
-commit must be obtained from its developer; its prior safety baseline alone does
-not contain this new demo. Owner testing remains pending.
+CAF also reported real Chrome journey/PDF/return-link verification. Owner Vikas
+tested and accepted this isolated STAGED milestone and authorized GitHub main,
+as recorded in the CAF coordination handoff. CAF implementation is b9ad5b0,
+merged via PR8 after PR6/7; exact CAF main is
+`d2a71e077d419a43f244fe7e068b5537710c41ab` (independently checked remotely).
+Radius implementation/evidence already reside on main through778b3b7. This is
+acceptance of the local staged model only; production enablement and real network
+activation remain separate decisions. The following checklist is retained for
+reproduction and future regression testing.
 
 1. Open Radius using `.tools/integration-demo/access.txt`. Open company10002,
    Users, and search `1000000000`: expect two suspended connections with one ID.

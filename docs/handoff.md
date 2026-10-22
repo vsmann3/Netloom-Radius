@@ -25,9 +25,15 @@ automatic delivery, durable hash acceptance and retry without duplication/reset
 verified. Both services remain STAGED/SUSPENDED; no internet activation.
 Maintained reproduction: scripts/test_joint_caf_demo.py; private safe outcome in
 .tools/integration-demo/joint-http-result.json. Owner checklist: working-demo.md.
-CAF demo runtime changes were still uncommitted at last inspection; request peer
-exact SHA rather than treating its e16ffaa safety baseline as the demo commit.
-Owner testing/acceptance is PENDING. Ask Vikas to test; await his feedback.
+Owner Vikas tested and accepted the isolated STAGED milestone and authorized
+GitHub main promotion, as reported through the CAF coordination handoff. CAF
+PR6/7/8 are merged; exact main d2a71e077d419a43f244fe7e068b5537710c41ab
+independently confirmed with git ls-remote. Runtime implementation b9ad5b0;
+CAF owner acceptance metadata1eee802. Radius implementation and demo evidence
+already reside on main (157edcb through778b3b7). This acceptance applies only to
+the demonstrated isolated STAGED journey. No production deployment, integration
+enablement, activation policy or pending-KYC policy is authorized by this merge.
+Further testable milestones still require owner testing and feedback.
 
 Owner acceptance rule: after every testable milestone, ask Vikas to test with
 environment, exact safe steps and expected results; await feedback before marking
