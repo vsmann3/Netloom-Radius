@@ -101,6 +101,11 @@ class CAFCatalogTests(TestCase):
 
     def test_changed_plan_disappears_until_republished_and_version_advances(self):
         self.publish()
+        # MariaDB's default text collation otherwise misses case-only changes.
+        self.plan.name = "300 mbps"
+        self.plan.save()
+        self.assertEqual(self.get().json()["items"], [])
+        self.plan.name = "300 Mbps"
         self.plan.download_kbps = 400000
         self.plan.save()
         self.assertEqual(self.get().json()["items"], [])

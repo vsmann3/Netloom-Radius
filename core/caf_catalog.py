@@ -7,8 +7,9 @@ import uuid
 
 from django.conf import settings
 from django.core import signing
-from django.db import DatabaseError, transaction
+from django.db import DatabaseError, connection, transaction
 from django.db.models import F
+from django.db.models.functions import Collate
 from django.http import JsonResponse
 from django.utils import timezone
 
@@ -129,7 +130,8 @@ def _plans(request, radius_company_id):
             return _error("invalid_cursor", 400, "Invalid or expired catalog cursor")
     # Changed live plan fields invalidate publication until deliberately republished.
     records = CAFPlanPublication.objects.filter(
-        plan__tenant=binding.tenant, active=True, name=F("plan__name"),
+        plan__tenant=binding.tenant, active=True,
+        name=Collate(F("plan__name"), "utf8mb4_bin" if connection.vendor == "mysql" else "BINARY"),
         upload_kbps=F("plan__upload_kbps"), download_kbps=F("plan__download_kbps"),
     ).order_by("plan_id")
     if after:
