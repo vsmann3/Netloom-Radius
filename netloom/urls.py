@@ -4,8 +4,11 @@ from django.urls import path
 from core import views
 from core import caf_catalog
 from core import caf_provisioning
+from core import caf_settings
 
 urlpatterns = [
+    path("api/integrations/ecaf/v1/connection-status", caf_settings.connection_status, name="caf-connection-status"),
+    path("companies/<int:company_id>/integrations/caf/", caf_settings.connection_settings, name="caf-connection-settings"),
     path("api/integrations/ecaf/v1/username-reservations", caf_provisioning.reservations, name="caf-reservations"),
     path("api/integrations/ecaf/v1/username-reservations/<uuid:reservation_id>/renew", caf_provisioning.renew_reservation, name="caf-reservation-renew"),
     path("api/integrations/ecaf/v2/provisionings", caf_provisioning.provisionings, name="caf-provisionings"),

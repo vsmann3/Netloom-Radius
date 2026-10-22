@@ -10,6 +10,7 @@
 <div class="card"><div class="card-body"><div class="subheader">Registered routers</div><div class="metric-value">{{ devices|length }}</div><div class="text-secondary small">Includes disabled devices</div></div></div>
 </div>
 <div class="company-grid">
+{% if membership.role == 'owner' %}<a class="card company-card text-decoration-none" href="{% url 'caf-connection-settings' tenant.company_id %}"><div class="card-body"><h2 class="h3">CAF integration settings</h2><p>Configure reciprocal API keys, mappings and staged delivery.</p></div></a>{% endif %}
 <a class="card company-card text-decoration-none" href="{% url 'company-users' tenant.company_id %}"><div class="card-body"><h2 class="h3">Users / Subscribers</h2><p class="text-secondary">Search accounts, filter subscriptions and manage subscriber access.</p><span class="text-primary">Open user directory &rarr;</span></div></a>
 <a class="card company-card text-decoration-none" href="{% url 'company-plans' tenant.company_id %}"><div class="card-body"><h2 class="h3">Service plans</h2><p class="text-secondary">View and create upload and download speed profiles.</p><span class="text-primary">Manage plans &rarr;</span></div></a>
 <a class="card company-card text-decoration-none" href="{% url 'company-routers' tenant.company_id %}"><div class="card-body"><h2 class="h3">Routers / NAS</h2><p class="text-secondary">View device registrations and register new routers.</p><span class="text-primary">Manage routers &rarr;</span></div></a>

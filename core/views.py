@@ -18,7 +18,7 @@ from .models import AuditEvent, Membership, NAS, Plan, Subscriber, Tenant
 from .forms import NASForm, PlanForm, SubscriberForm, SubscriberFilterForm
 from .directories import filter_subscribers
 from .services import require_membership, suspend_subscriber
-from .models import CAFCompanyBinding
+from .models import CAFCompanyBinding, CAFConnection
 
 
 @require_GET
@@ -132,6 +132,16 @@ def caf_onboard(request, company_id):
     binding = CAFCompanyBinding.objects.filter(tenant=tenant, active=True).first()
     if not binding:
         return JsonResponse({"error": "CAF company binding required"}, status=503)
+    if not getattr(settings, "CAF_DEMO_LOCAL_HTTP", False):
+        from .caf_connections import validate_origin
+        from django.core.exceptions import ValidationError
+        config = CAFConnection.objects.filter(binding=binding).first()
+        try:
+            if not config or config.origin != origin:
+                raise ValidationError("Connection origin mismatch")
+            validate_origin(config.origin)
+        except ValidationError:
+            return JsonResponse({"error": "CAF form origin must match the reviewed company connection"}, status=503)
     # Prefill only. CAF must enforce its own signed-in actor's company/franchise scope.
     return redirect(base + "?" + urlencode({"companyId": binding.caf_company_id,
         "returnTo": request.build_absolute_uri(reverse("company-users", args=[tenant.company_id]))}))

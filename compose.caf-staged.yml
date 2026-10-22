@@ -1,0 +1,17 @@
+# Optional overlay: -f compose.yml -f compose.caf-staged.yml
+# Secrets must be provisioned separately; never commit their contents.
+services:
+  web:
+    secrets:
+      - django_secret_key
+      - db_password
+      - caf_fingerprint_keys
+      - caf_credential_keys
+    environment:
+      CAF_FINGERPRINT_KEYS_FILE: /run/secrets/caf_fingerprint_keys
+      CAF_CREDENTIAL_KEYS_FILE: /run/secrets/caf_credential_keys
+secrets:
+  caf_fingerprint_keys:
+    file: ./secrets/caf_fingerprint_keys.json
+  caf_credential_keys:
+    file: ./secrets/caf_credential_keys.json

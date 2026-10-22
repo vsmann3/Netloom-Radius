@@ -338,7 +338,15 @@ def _dispatch(request, grant, handler, schema):
         token, error = authenticate(request, grant, enabled=settings.CAF_PROVISIONING_ENABLED)
         if error is not None:
             return error
-        return handler(token, _key(request), _body(request, schema))
+        # Serialize enable/disable and writes on the same tenant lock. Disabling
+        # never removes durable receipts; receipt GET remains separately scoped.
+        with transaction.atomic():
+            Tenant.objects.select_for_update().get(pk=token.binding.tenant_id)
+            if not getattr(settings, "CAF_DEMO_LOCAL_HTTP", False):
+                from .caf_connections import staged_ready
+                if not staged_ready(token.binding):
+                    return _error("staged_delivery_disabled", 503, "Company staged delivery is disabled")
+            return handler(token, _key(request), _body(request, schema))
     except Rejected as exc:
         return _error(exc.code, exc.status, "Request requires correction or reconciliation", retryable=exc.status == 503)
     except IntegrityError:
