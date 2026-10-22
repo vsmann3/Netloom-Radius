@@ -29,6 +29,16 @@ publication is idempotent. Withdrawal increments version and hides the plan.
 Versioned reservations will also need to validate publication/current plan before
 future provisioning; this endpoint alone makes no provisioning guarantee.
 
+Peer review fd374b4 identified case/trailing-space equality as a publication risk.
+The earlier 1feb9ee binary collation fixed case sensitivity but did not establish
+trailing-space significance on PAD SPACE collations. Publication names now compare
+complete binary strings using CAST AS BINARY on MariaDB and CAST AS BLOB on SQLite,
+before keyset filtering/LIMIT. No Python post-pagination filtering is used. See
+[MariaDB binary comparison semantics](https://mariadb.com/docs/server/reference/sql-functions/string-functions/binary-operator).
+The regression exercises stale rows before/between/after valid rows, exact page
+boundaries, case-only/one-space/two-space changes and republish version increments.
+MariaDB CI prints the actual column collation with its regression PASS marker.
+
 Pages use plan UUID keyset order, 1–100 rows (default 100). Signed cursors expire
 after 15 minutes and bind company, binding and token ID. Rotation requires starting
 a fresh listing. Directory paging is not a consistent snapshot or a change feed.

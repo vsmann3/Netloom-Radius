@@ -7,14 +7,26 @@ import uuid
 
 from django.conf import settings
 from django.core import signing
-from django.db import DatabaseError, connection, transaction
-from django.db.models import F
-from django.db.models.functions import Collate
+from django.db import DatabaseError, transaction
+from django.db.models import BinaryField, F, Func
 from django.http import JsonResponse
 from django.utils import timezone
 
 from .models import AuditEvent, CAFPlanPublication, CAFServiceToken, Plan
 from .services import require_membership
+
+
+class ByteString(Func):
+    """Compare complete bytes, including trailing spaces, before SQL pagination."""
+
+    output_field = BinaryField()
+    arity = 1
+
+    def as_mysql(self, compiler, connection, **extra_context):
+        return self.as_sql(compiler, connection, template="CAST(%(expressions)s AS BINARY)", **extra_context)
+
+    def as_sqlite(self, compiler, connection, **extra_context):
+        return self.as_sql(compiler, connection, template="CAST(%(expressions)s AS BLOB)", **extra_context)
 
 
 def issue_token(binding, *, expires_at, plans_read=False):
@@ -129,9 +141,9 @@ def _plans(request, radius_company_id):
         except (signing.BadSignature, KeyError, ValueError, TypeError):
             return _error("invalid_cursor", 400, "Invalid or expired catalog cursor")
     # Changed live plan fields invalidate publication until deliberately republished.
-    records = CAFPlanPublication.objects.filter(
+    records = CAFPlanPublication.objects.alias(_name_bytes=ByteString(F("name"))).filter(
         plan__tenant=binding.tenant, active=True,
-        name=Collate(F("plan__name"), "utf8mb4_bin" if connection.vendor == "mysql" else "BINARY"),
+        _name_bytes=ByteString(F("plan__name")),
         upload_kbps=F("plan__upload_kbps"), download_kbps=F("plan__download_kbps"),
     ).order_by("plan_id")
     if after:

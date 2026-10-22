@@ -3,12 +3,13 @@ from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+import uuid
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import DatabaseError, transaction
+from django.db import DatabaseError, connection, transaction
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
@@ -127,6 +128,35 @@ class CAFCatalogTests(TestCase):
             with self.assertRaises(RuntimeError):
                 self.publish()
         self.assertFalse(CAFPlanPublication.objects.exists())
+
+    def test_exact_name_invalidation_precedes_pagination_and_republish_advances(self):
+        plans = []
+        for index in range(5):
+            p = Plan.objects.create(id=uuid.UUID(int=index + 1), tenant=self.tenant,
+                                    name=f"Plan-{index}", upload_kbps=1000, download_kbps=1000)
+            self.publish(p)
+            plans.append(p)
+        # Stale rows before, between and after valid rows must not consume page slots.
+        for index, changed in [(0, "plan-0"), (2, "Plan-2 "), (4, "Plan-4  ")]:
+            plans[index].name = changed
+            plans[index].save()
+        first = self.get(data={"limit": "1"}).json()
+        self.assertEqual([x["plan_id"] for x in first["items"]], [str(plans[1].pk)])
+        self.assertTrue(first["has_more"])
+        second = self.get(data={"limit": "1", "cursor": first["next_cursor"]}).json()
+        self.assertEqual([x["plan_id"] for x in second["items"]], [str(plans[3].pk)])
+        self.assertFalse(second["has_more"])
+        self.assertIsNone(second["next_cursor"])
+        for index in [0, 2, 4]:
+            self.assertEqual(self.publish(plans[index]).version, 2)
+        items = self.get().json()["items"]
+        self.assertEqual(len(items), 5)
+        self.assertEqual({x["name"] for x in items}, {p.name for p in plans})
+        if connection.vendor == "mysql":
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COLLATION(name) FROM core_plan LIMIT 1")
+                collation = cursor.fetchone()[0]
+            print(f"CAF catalog exact-name SQL regression PASS: collation={collation}; case/trailing spaces, pagination and republish versions")
 
     def test_pagination_and_cursor_binding_tamper_expiry(self):
         for i in range(3):
