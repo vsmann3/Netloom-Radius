@@ -81,3 +81,7 @@ SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if x]
 DATA_UPLOAD_MAX_MEMORY_SIZE = 65536
+# Explicit opt-in after service bindings/tokens are configured. Never enables AAA.
+CAF_CATALOG_ENABLED = os.environ.get("CAF_CATALOG_ENABLED", "false") == "true"
+# Exact backend peer IPs only; trust no forwarded protocol header by default.
+CAF_CATALOG_PROXY_IPS = [x.strip() for x in os.environ.get("CAF_CATALOG_PROXY_IPS", "").split(",") if x.strip()]

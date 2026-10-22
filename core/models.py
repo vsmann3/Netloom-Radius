@@ -155,3 +155,51 @@ class AuditEvent(TenantRecord):
     action = models.CharField(max_length=64)
     target_id = models.UUIDField()
     outcome = models.CharField(max_length=32)
+
+
+class CAFCompanyBinding(models.Model):
+    """Explicitly reviewed external binding; never resolve a company by name."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source = models.SlugField(max_length=64)
+    caf_company_id = models.CharField(max_length=128)
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["source", "caf_company_id"], name="caf_source_company_unique"),
+            models.UniqueConstraint(fields=["source", "tenant"], name="caf_source_tenant_unique"),
+        ]
+
+
+class CAFServiceToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    binding = models.ForeignKey(CAFCompanyBinding, on_delete=models.PROTECT)
+    # High-entropy random bearer secret; only its SHA-256 digest is stored.
+    secret_digest = models.CharField(max_length=64, editable=False)
+    plans_read = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    rate_window = models.PositiveBigIntegerField(default=0, editable=False)
+    rate_count = models.PositiveIntegerField(default=0, editable=False)
+
+
+class CAFPlanPublication(models.Model):
+    """Versioned, explicitly published snapshot; legacy plans have no validity."""
+
+    plan = models.OneToOneField(Plan, on_delete=models.PROTECT, primary_key=True)
+    version = models.PositiveBigIntegerField(default=1)
+    active = models.BooleanField(default=True)
+    name = models.CharField(max_length=100)
+    upload_kbps = models.PositiveIntegerField()
+    download_kbps = models.PositiveIntegerField()
+    duration_seconds = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(version__gte=1) & Q(version__lte=9007199254740991), name="caf_plan_version_range"),
+            models.CheckConstraint(condition=Q(duration_seconds__gte=1), name="caf_plan_positive_duration"),
+            models.CheckConstraint(condition=Q(upload_kbps__gte=1) & Q(download_kbps__gte=1), name="caf_plan_positive_rates"),
+        ]

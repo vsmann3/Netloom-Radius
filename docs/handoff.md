@@ -2,6 +2,19 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+Owner resumed both developers after the coordination checkpoint. CAF was notified
+directly. Reviewed CAF 36a5747 / Radius draft PR 1 and reran all 38 offline contract
+tests successfully. PR 1 remains unmerged and activation policy unresolved.
+
+First runtime integration slice: company-scoped hashed expiring service tokens,
+immutable external bindings, explicit audited versioned plan publication with
+fixed-duration validity, and the disabled-by-default HTTPS plan catalog endpoint.
+See docs/integrations/caf-catalog-implementation.md. Migrations 0007–0009 add only
+integration tables/triggers; no subscriber/AAA view changes. Local suite: 67 tests,
+61 passed, 6 MariaDB-only skipped; migration drift/system/whitespace checks pass.
+MariaDB/SQL/PAP CI and CAF peer runtime review are still required. Not deployed.
+No customer/provisioning/activation endpoint is implemented by this slice.
+
 User requested one self-contained handoff for the separate CAF Codex developer.
 Canonical CAF-RADIUS-TEAM-HANDOFF.md at the repository root consolidates confirmed
 decisions, both journeys, entity/field ownership, APIs/schemas, current gaps, the
