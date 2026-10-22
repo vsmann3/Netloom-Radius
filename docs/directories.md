@@ -23,9 +23,11 @@ inputs return an empty directory with errors instead of silently broadening resu
 Plan choices, counts and records remain scoped to the authorized company. A foreign
 account ID does not reveal its owner; a foreign plan ID is not an allowed choice.
 
-Subscriber Account ID currently means the existing UUID. Short numeric company IDs
-are a different identifier. The user's preference for numeric subscriber IDs has
-been requested but not assumed.
+Subscriber Account ID in the current directory means the existing UUID. The user
+subsequently chose the CAF portal's 10-digit customerId as the shared main customer
+identifier. That supersedes generating another customer number here. Integration
+will add/display/filter this external ID while retaining local UUID service IDs;
+it is not populated by the present directory release. See integrations/ecaf-api-contract.md.
 
 ## Renewal dates
 

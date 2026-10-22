@@ -2,6 +2,16 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+New boundary: user has another AI developer handling vsmann3/caf-portal. This agent
+owns Radius/AAA and network operations; do not build a duplicate eCAF onboarding
+form or document workflow. API-only integration. Use CAF's 10-digit customerId as
+the main shared customer identifier; do not issue separate customer numbers here.
+Company/franchise numbers remain distinct; subscriber UUID identifies a service.
+CAF main reviewed at 05dbe819ff52a5fb022965a1113bd94981b2f167: customer ID sequence
+exists, but Radius adapter is a no-op and payload omits customerId/version. A proposed
+cross-developer contract, event schema and synthetic example are in docs/integrations/.
+These are proposals, not live endpoints; no CAF code, credentials or runtime changed.
+
 User requested separate pages for each management area and a filterable subscriber
 directory. Implemented company overview plus /users/, /plans/ and /routers/ pages.
 Subscriber filters cover account UUID, username, status, plan, validity, expiry,

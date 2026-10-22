@@ -26,6 +26,12 @@ Every company and franchise must have an automatically assigned permanent numeri
 public ID of at least five digits. Keep UUID relationships internally and use public
 numbers in browser company URLs; see company-numbers.md.
 
+Customer onboarding/eCAF is owned exclusively by the separate caf-portal project.
+Reuse its unique 10-digit customerId as the main customer identifier in Radius;
+do not build eCAF forms or a competing customer-number allocator here. Company and
+franchise public IDs are distinct from customer IDs. See integrations/ecaf-api-contract.md
+for the proposed API-only boundary and developer handoff.
+
 Validate on the user's network before offering the same codebase to fellow ISPs
 for paid hosting, setup, support or software access. Separate installations remain
 an option. Defer automated licensing and a commercial sales portal.

@@ -34,4 +34,20 @@ Use unique NAS secrets, separate service credentials and deployment-specific sec
 
 Record actor, tenant, target, timestamp and outcome for administrative changes. Keep customer personal data out of application logs. Define applicable Indian retention obligations and tenant contracts before production retention settings are finalized.
 
-Deploy from reviewed Git revisions with pinned dependencies, migrations, backups and documented rollback procedures. Never run destructive seed routines on upgrade. Integration with eCAF will use an authenticated, tenant-scoped and idempotent API; its existing implementation has not yet been reviewed.
+Deploy from reviewed Git revisions with pinned dependencies, migrations, backups and documented rollback procedures. Never run destructive seed routines on upgrade.
+
+## CAF integration boundary (user decision, 2026-10-22)
+
+The separate https://github.com/vsmann3/caf-portal application owns eCAF capture,
+documents, review and 10-digit customer ID issuance. Do not implement another eCAF
+form or document store in Radius. Radius owns AAA/network service management and
+the previously agreed operational/financial workflows. Integrate only through
+authenticated, tenant/franchise-scoped APIs; never share databases or browser logins.
+
+CAF customerId is the shared main customer identifier, transported as a 10-digit
+string and never independently allocated here. Internal subscriber UUIDs identify
+network services; company/franchise numbers remain separate organizational IDs.
+Reviewed CAF source at 05dbe819ff52a5fb022965a1113bd94981b2f167. The existing adapter
+is a no-op, not an implemented connection. The proposed endpoint/payload/retry
+contract is in [CAF integration](integrations/ecaf-api-contract.md); it must be
+agreed and implemented by both developers before enabling sync.
