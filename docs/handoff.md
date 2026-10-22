@@ -2,6 +2,25 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+User clarified approval scope: ONLY edits to basic customer/KYC information (such
+as name/full name and CAF-required KYC fields) require CAF review. Radius is free
+to manage credentials, plans, IP/network, billing and renewals under its own scoped
+permissions/audit, syncing read-only metadata to CAF. Username/password changes
+do NOT need CAF approval. Never mirror passwords/hashes/NAS secrets. CAF owns all
+company/franchise/operator/customer onboarding. One question remains: retain last
+approved access vs suspend an existing service while a later KYC revision awaits
+review. Do not implement that unresolved access policy without confirmation.
+
+Newest user proposal: CAF should own ALL organization/staff/customer onboarding;
+Radius owns post-onboarding network/billing and publishes read-only summaries back
+to CAF. Radius may request edits to CAF-owned data, but must submit revisions for
+CAF-manager approval before applying them. Discussion captured in
+docs/integrations/ownership-revisions-proposal.md. Open policies: keep existing
+approved access vs suspend while a later revision is pending, and which technical/
+billing changes need CAF approval. Do not implement the unresolved policy or claim
+the expanded contract is confirmed yet. Earlier confirmed initial-approval gate
+and permanent 10-digit customer ID remain valid.
+
 User confirmed both onboarding journeys: company selection in CAF fetches Radius
 plans; CAF assigns username, initial password and 10-digit customer/account ID;
 CAF approval triggers initial activation (NO extra payment/wallet gate). Radius

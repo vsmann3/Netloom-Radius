@@ -40,6 +40,12 @@ from Radius opens the same CAF form in a new tab with safe context/return naviga
 CAF handles self-service. The same 10-digit customer ID is retained for all customer
 operations; local service UUIDs distinguish connections without renumbering customers.
 
+CAF also owns company/franchise/operator onboarding. Radius owns network/service
+and billing operations and syncs read-only summaries to CAF. CAF-manager approval
+is required only for changes to basic customer/KYC fields that CAF requires to be
+reviewed. Username/password, plan/IP/network, billing and renewal changes do not
+require CAF approval. Existing access during pending KYC review is not yet decided.
+
 Validate on the user's network before offering the same codebase to fellow ISPs
 for paid hosting, setup, support or software access. Separate installations remain
 an option. Defer automated licensing and a commercial sales portal.

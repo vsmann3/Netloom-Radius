@@ -6,6 +6,15 @@ enabled by this document. No CAF repository changes were made here.
 
 ## Confirmed user decisions (supersede earlier proposal)
 
+- CAF owns company/franchise/operator/customer onboarding. Radius owns subsequent
+  network/service and billing operations, publishing read-only projections to CAF.
+- Only edits to basic customer/KYC information requiring CAF review create pending
+  revisions for CAF-manager approval. CAF defines the required field policy.
+- Radius username/password, plan, IP, network, billing and renewal changes do NOT
+  need CAF approval; they follow Radius authorization/audit. Never send passwords,
+  hashes or NAS secrets in the read-only projection. Existing-service behavior
+  during a pending KYC revision is still awaiting user confirmation.
+
 - New internet service activates after CAF approval, not on draft/submission. Do
   not add a payment/wallet authorization prerequisite to initial activation.
 - Selecting a company in CAF fetches that company's plans from Radius.
