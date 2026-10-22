@@ -28,5 +28,6 @@ Thumbs.db
 .DS_Store
 .dependency-check/
 *.sqlite3
+staticfiles/
 .tools/
 .radius-config/

@@ -2,6 +2,25 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+The user requested a prebuilt dashboard instead of the basic pages. A Tabler 1.6.1
+UI is implemented with local vendored CSS, responsive templates, company switching,
+scoped counts and WhiteNoise 6.12.0 static serving. Local 40-test suite passed
+(5 MariaDB-only skips); desktop/mobile browser workflows and screenshots checked.
+No migration. See dashboard-ui.md. VM deployment still needs console sudo; do not
+claim the UI is live until its deployment and external static response are verified.
+
+Live company onboarding completed successfully (user supplied console output).
+Existing panel account `suradmin` received explicit owner memberships for
+Infolink Broadband (`infolink-broadband`), NorthNet (`northnet`) and VM Net (`vm-net`).
+No credentials changed. Pre-onboarding backup:
+backups/netloom-20261022T021421Z.sql.gz. Off-VM backup/restore remain unverified.
+Source and rebuilt image are fdc3f7c; onboarding ran in disposable web command
+containers. The running web service was not recreated during this onboarding;
+its c394450 company page reads the new memberships directly from the database.
+CI passed: https://github.com/vsmann3/Netloom-Radius/actions/runs/39709912123.
+Dashboard visibility is awaiting the user's refresh; do not rerun onboarding
+or reset the account simply to check visibility.
+
 Company names confirmed: Infolink Broadband, NorthNet and VM Net. Proposed tenant
 slugs are in product-direction.md. Pilot choice and owner memberships remain pending;
 no live company records have been created from these names yet.

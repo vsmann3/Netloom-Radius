@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.http import require_GET, require_POST
@@ -29,7 +31,13 @@ def health(request):
 @require_GET
 def dashboard(request):
     memberships = Membership.objects.select_related("tenant").filter(user=request.user, tenant__active=True)
-    return render(request, "dashboard.html", {"memberships": memberships})
+    tenant_ids = memberships.values_list("tenant_id", flat=True)
+    return render(request, "dashboard.html", {
+        "memberships": memberships,
+        "subscriber_count": Subscriber.objects.filter(tenant_id__in=tenant_ids).count(),
+        "plan_count": Plan.objects.filter(tenant_id__in=tenant_ids).count(),
+        "nas_count": NAS.objects.filter(tenant_id__in=tenant_ids).count(),
+    })
 
 
 @login_required
@@ -66,6 +74,12 @@ def company(request, tenant_id):
                 return redirect("company", tenant_id=tenant_id)
     return render(request, "company.html", {
         "tenant": tenant, "can_write": membership.role in {"owner", "operator"},
+        "membership": membership,
+        "memberships": Membership.objects.select_related("tenant").filter(user=request.user, tenant__active=True),
+        "subscriber_stats": Subscriber.objects.filter(tenant_id=tenant_id).aggregate(
+            total=Count("id"), suspended=Count("id", filter=Q(status="suspended")),
+            active=Count("id", filter=Q(status="active", expires_at__gt=timezone.now())),
+        ),
         "can_manage_nas": membership.role == Membership.Role.OWNER,
         "devices": NAS.objects.filter(tenant_id=tenant_id).order_by("name"),
         "plans": Plan.objects.filter(tenant_id=tenant_id).order_by("name"),

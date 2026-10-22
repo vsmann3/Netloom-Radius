@@ -1,6 +1,14 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Netloom Radius</title></head>
-<body><main><h1>Netloom Radius</h1><p>Signed in as {{ user.get_username }}</p>
-<h2>Your ISPs</h2><ul>{% for membership in memberships %}<li>{{ membership.tenant.name }} &middot; {{ membership.get_role_display }} &middot; <a href="{% url 'company' membership.tenant_id %}">Manage company</a></li>{% empty %}<li>No ISP access has been assigned.</li>{% endfor %}</ul>
-<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
-</main></body></html>
+{% extends 'base.html' %}
+{% block title %}Company overview | Netloom Radius{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">YOUR NETWORK WORKSPACE</div><h1>Company overview</h1><p class="text-secondary">Choose a company to manage its subscribers, plans and routers.</p></div><span class="badge bg-blue-lt">{{ memberships|length }} companies accessible</span></div>
+<div class="metric-grid">
+<div class="card"><div class="card-body"><div class="subheader">Companies</div><div class="metric-value">{{ memberships|length }}</div><div class="text-secondary small">Your assigned ISP workspaces</div></div></div>
+<div class="card"><div class="card-body"><div class="subheader">Subscribers</div><div class="metric-value">{{ subscriber_count }}</div><div class="text-secondary small">Across your companies</div></div></div>
+<div class="card"><div class="card-body"><div class="subheader">Service plans</div><div class="metric-value">{{ plan_count }}</div><div class="text-secondary small">Configured speed profiles</div></div></div>
+<div class="card"><div class="card-body"><div class="subheader">Registered routers</div><div class="metric-value">{{ nas_count }}</div><div class="text-secondary small">Includes disabled devices</div></div></div>
+</div>
+<div class="section-heading"><h2>Your companies</h2><span class="text-secondary">Separate access. Separate records.</span></div>
+<div class="company-grid">{% for item in memberships %}<article class="card company-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-4"><span class="avatar avatar-lg bg-blue-lt">{{ item.tenant.name|first }}</span><span class="badge bg-secondary-lt">{{ item.get_role_display }}</span></div><h3>{{ item.tenant.name }}</h3><p class="text-secondary">Manage this company&rsquo;s subscribers, service plans and router registrations.</p><a class="btn btn-primary w-100 mt-3" href="{% url 'company' item.tenant_id %}">Open company <span class="ms-auto" aria-hidden="true">&rarr;</span></a></div></article>{% empty %}<div class="card"><div class="empty"><p class="empty-title">No ISP access has been assigned.</p><p class="empty-subtitle text-secondary">Ask your platform administrator to assign company access.</p></div></div>{% endfor %}</div>
+<div class="card mt-4"><div class="card-body d-flex gap-3 align-items-start"><span class="avatar bg-blue-lt" aria-hidden="true">i</span><div><h3 class="mb-1">Start with your company workspace</h3><p class="text-secondary mb-0">Create a service plan, add subscribers, then register your routers. Router activation and subscriber credentials are provisioned separately.</p></div></div></div>
+{% endblock %}

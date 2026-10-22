@@ -4,7 +4,15 @@ from django.utils import timezone
 from .models import NAS, Plan, Subscriber
 
 
-class NASForm(forms.ModelForm):
+class DashboardFormMixin:
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("auto_id", self.__class__.__name__.lower() + "_%s")
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
+
+
+class NASForm(DashboardFormMixin, forms.ModelForm):
     class Meta:
         model = NAS
         fields = ["name", "source_ip"]
@@ -19,7 +27,7 @@ class NASForm(forms.ModelForm):
             self.add_error("source_ip", "This address is unavailable for registration.")
 
 
-class PlanForm(forms.ModelForm):
+class PlanForm(DashboardFormMixin, forms.ModelForm):
     class Meta:
         model = Plan
         fields = ["name", "upload_kbps", "download_kbps"]
@@ -35,7 +43,7 @@ class PlanForm(forms.ModelForm):
         return name
 
 
-class SubscriberForm(forms.ModelForm):
+class SubscriberForm(DashboardFormMixin, forms.ModelForm):
     class Meta:
         model = Subscriber
         fields = ["username", "plan", "expires_at"]

@@ -308,6 +308,25 @@ class CompanyManagementTests(TestCase):
         self.assertEqual(len(second.context["records"]), 1)
         self.assertContains(second, "page-100")
 
+    def test_dashboard_counts_and_company_switcher_are_tenant_scoped(self):
+        Subscriber.objects.create(tenant=self.a, plan=self.plan, username="visible", password_hash="!", expires_at=timezone.now() + timedelta(days=1))
+        Subscriber.objects.create(tenant=self.b, plan=self.foreign_plan, username="hidden", password_hash="!", expires_at=timezone.now() + timedelta(days=1))
+        NAS.objects.create(tenant=self.b, name="Hidden NAS", source_ip="192.0.2.99", secret_ref="hidden")
+        dashboard = self.client.get(reverse("dashboard"))
+        self.assertEqual(dashboard.context["subscriber_count"], 1)
+        self.assertEqual(dashboard.context["plan_count"], 1)
+        self.assertEqual(dashboard.context["nas_count"], 0)
+        self.assertNotContains(dashboard, self.b.name)
+        company = self.client.get(self.url)
+        self.assertEqual(company.context["subscriber_stats"], {"total": 1, "active": 1, "suspended": 0})
+        self.assertNotContains(company, self.b.name)
+
+    def test_active_subscription_count_excludes_expired_and_suspended(self):
+        for username, status, delta in [("active", "active", 1), ("expired", "active", -1), ("suspended", "suspended", 1)]:
+            Subscriber.objects.create(tenant=self.a, plan=self.plan, username=username, password_hash="!", status=status, expires_at=timezone.now() + timedelta(days=delta))
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["subscriber_stats"], {"total": 3, "active": 1, "suspended": 1})
+
 
 @skipUnless(connection.vendor == "mysql", "Requires MariaDB authorization view")
 class RadiusSQLTests(TestCase):

@@ -44,6 +44,7 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python manage.py check --settings=netloom.test_settings
       - run: python manage.py makemigrations --check --dry-run --settings=netloom.test_settings
+      - run: python manage.py collectstatic --noinput --settings=netloom.test_settings
       - run: python manage.py test core --settings=netloom.test_settings -v 2
       - name: Check host scripts
         run: |

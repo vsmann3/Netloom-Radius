@@ -7,3 +7,6 @@ data
 logs
 **/__pycache__
 *.sqlite3
+staticfiles
+.dependency-check
+.tools

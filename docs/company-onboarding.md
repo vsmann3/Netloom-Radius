@@ -1,5 +1,13 @@
 # Company onboarding
 
+## Completed on the initial VM - 2026-10-22
+
+User-provided console output confirms all three companies and owner memberships
+for the existing panel account `suradmin` were created successfully using fdc3f7c.
+Pre-onboarding backup: `backups/netloom-20261022T021421Z.sql.gz`.
+No credentials were changed. The running web service reads the memberships from
+the shared database; dashboard visibility awaits the user's refresh.
+
 Confirmed companies: Infolink Broadband, NorthNet and VM Net. Each gets an
 independent tenant and explicit owner membership for the user's existing panel
 administrator. Existing lab data is preserved; no routers, plans, subscribers or

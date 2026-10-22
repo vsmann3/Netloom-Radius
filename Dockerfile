@@ -18,6 +18,7 @@ COPY --chown=app:app netloom ./netloom
 COPY --chown=app:app core ./core
 COPY --chown=app:app templates ./templates
 COPY --chown=app:app deploy/radius/mods-enabled/netloom_sql ./deploy/radius/mods-enabled/netloom_sql
+RUN DJANGO_SECRET_KEY=static-build-only DB_PASSWORD=static-build-only python manage.py collectstatic --noinput
 USER app
 EXPOSE 8000
 CMD ["gunicorn", "netloom.wsgi:application", "--bind", "0.0.0.0:8000", "--no-control-socket", "--workers", "2", "--timeout", "30", "--access-logfile", "/dev/null", "--error-logfile", "-"]

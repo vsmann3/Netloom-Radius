@@ -1,5 +1,13 @@
 # Development and current implementation
 
+## Dashboard UI - 2026-10-22
+
+The basic scaffold is replaced by locally bundled Tabler 1.6.1 templates and
+WhiteNoise static serving. Overview, company switcher, scoped summary counts,
+management forms/tables and login are responsive. See [UI notes](dashboard-ui.md).
+Run collectstatic before local tests: `python manage.py collectstatic --noinput
+--settings=netloom.test_settings`. Docker and CI collect it automatically.
+
 ## Management increment - 2026-10-22
 
 The `onboard_companies` management command previews or atomically creates company

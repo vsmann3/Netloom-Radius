@@ -1,0 +1,30 @@
+{% load static %}<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Netloom Radius{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'vendor/tabler/tabler.min.css' %}">
+<link rel="stylesheet" href="{% static 'netloom/app.css' %}">
+</head>
+<body>{% block layout %}<div class="app-shell">
+<aside class="app-sidebar" aria-label="Main navigation">
+<a class="brand" href="{% url 'dashboard' %}"><span class="brand-mark">N</span><span>netloom<span class="brand-caption">RADIUS MANAGEMENT</span></span></a>
+<div class="sidebar-label">WORKSPACE</div>
+<a class="side-link {% if not tenant %}is-active{% endif %}" href="{% url 'dashboard' %}"><span aria-hidden="true">▦</span> Company overview</a>
+{% if tenant %}<div class="sidebar-label mt-4">{{ tenant.name }}</div>
+<a class="side-link" href="#subscribers"><span aria-hidden="true">◎</span> Subscribers</a>
+<a class="side-link" href="#plans"><span aria-hidden="true">▤</span> Service plans</a>
+<a class="side-link" href="#routers"><span aria-hidden="true">⌘</span> Routers / NAS</a>{% endif %}
+<div class="sidebar-label mt-4">COMING NEXT</div>
+<span class="side-link unavailable">Franchises <span class="soon">Planned</span></span>
+<span class="side-link unavailable">Wallets &amp; settlements <span class="soon">Planned</span></span>
+<div class="sidebar-foot"><span class="status-dot"></span> Own network first<p>One workspace. Separate companies.</p></div>
+</aside>
+<div class="app-main">
+<header class="app-header">
+<details class="company-picker"><summary>{% if tenant %}{{ tenant.name }}{% else %}All your companies{% endif %} <span aria-hidden="true">⌄</span></summary><div class="company-menu"><a href="{% url 'dashboard' %}">Company overview</a>{% for item in memberships %}<a href="{% url 'company' item.tenant_id %}">{{ item.tenant.name }}</a>{% endfor %}</div></details>
+<div class="account-menu"><span class="avatar avatar-sm bg-blue-lt">{{ user.get_username|first|upper }}</span><div><strong>{{ user.get_username }}</strong><div class="text-secondary small">{% if membership %}{{ membership.get_role_display }}{% else %}Management account{% endif %}</div></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Sign out</button></form></div>
+</header>
+<main id="main-content" class="app-content">{% block content %}{% endblock %}</main>
+<footer class="app-footer">Netloom Radius <span>Company access is managed separately for each ISP.</span></footer>
+</div></div>{% endblock %}
+</body></html>
