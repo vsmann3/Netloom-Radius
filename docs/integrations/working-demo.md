@@ -83,21 +83,44 @@ accept/label synthetic active receipts in its own isolated demo. This does not
 validate distributed withdrawal fencing or authorize real internet access. Real
 settings never enable it through an environment variable. No UDP ports are opened.
 
-## Owner test after the two local apps pass joint verification
+## Verified working pair and owner test
 
-1. Log into the local Radius URL using the private access file.
-2. Open the demo company, Users, and Add Customer using CAF form. Expect the same
-   CAF application in a new tab. Use only synthetic customer/KYC data.
-3. Select the mapped company/franchise. Expect the two real Radius demo plans.
-4. Complete the CAF draft and reserve a username. Saving/submitting must not create
-   an active Radius service. Record the CAF-issued 10-digit Customer ID.
-5. Approve through CAF and process its delivery. Expect a durable accepted receipt
-   and the SAME ID/username/plan in Radius. Default stage-only mode remains suspended;
-   coordinated synthetic-active mode clearly labels its isolated behavior.
-6. Retry delivery and refresh both apps. Expect one connection, unchanged expiry,
-   no credential reset. Search the customer ID in Radius and confirm the result.
-7. Report results before this milestone is marked owner accepted.
+Both local apps are running: CAF http://127.0.0.1:18110 and Radius
+http://127.0.0.1:18120. Production domains were not updated. Two actual HTTP
+journeys passed, including an additional connection reusing Customer ID
+`1000000000`. Tests exercised real plan fetching, reservations, CAF submission,
+franchise approval denial, company approval, automatic worker delivery, durable
+credential acceptance, and a retry without duplicate service/password/expiry reset.
+Both connections remain STAGED/SUSPENDED; internet activation is disabled.
 
-These are intended joint acceptance steps. The final handoff must state which
-apps are actually running and the jointly verified outcome, not infer readiness
-from standalone fixture tests or assume production URLs were updated.
+Reproduce with synthetic data only (creates another test application):
+
+```powershell
+.venv/Scripts/python.exe scripts/test_joint_caf_demo.py --caf-demo-dir E:/OpenCode/caf-portal/.tools/working-demo
+# Optional additional connection: append --existing-customer-id 1000000000
+```
+
+Safe results are in ignored `.tools/integration-demo/joint-http-result.json`.
+These are actual API/DB results, not browser or owner acceptance. CAF's runtime
+commit must be obtained from its developer; its prior safety baseline alone does
+not contain this new demo. Owner testing remains pending.
+
+1. Open Radius using `.tools/integration-demo/access.txt`. Open company10002,
+   Users, and search `1000000000`: expect two suspended connections with one ID.
+2. Click **Add customer using CAF form**. CAF opens in a new tab. CAF private
+   logins are in `E:/OpenCode/caf-portal/.tools/working-demo/access.txt`.
+   Use `demo-counter@caf.example.test` to submit synthetic customer/KYC data.
+3. Select the demo company/franchise and a **Published RADIUS plan**. Enter a
+   unique **Reserved service username**, then **Save draft and reserve RADIUS
+   username**. Complete and submit the CAF. No new Radius service exists yet.
+4. Sign into CAF as `demo-company@caf.example.test` and approve the application.
+   Allow the automatic worker a few seconds. Expect **STAGED**, accepted
+   credentials, and the same 10-digit ID/username/plan in Radius, **SUSPENDED**.
+5. Refresh both apps and search the ID in Radius. Optionally create another CAF
+   using **Existing approved Customer ID (optional)** and a different username:
+   expect another connection under the same ID.
+6. Report actual results to the developers before this milestone is owner accepted.
+
+Use only synthetic proof images/details. This model verifies approved onboarding
+and staged provisioning; production activation, wallets/billing and the remaining
+product scope above are separate milestones.

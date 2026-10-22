@@ -18,9 +18,16 @@ Mapped sourcecaf-portal-demo, CAF companynetloom-demo-company/franchisenetloom-d
 Radiuscompany10002, two published plans. Actual HTTP catalog and authenticated UI
 smoke pass. Portable official PostgreSQL16.15 now running127.0.0.1:18130 with isolated
 caf_demo_netloom DB; private caf-database.json passed to CAF peer via file reference.
-CAF is implementing actual form/client/worker in its own repo; localCAF18110 not
-yet confirmed running, and joint end-to-end acceptance is NOT yet complete.
-Continue to a working two-app demonstration and ask Vikas to test before acceptance.
+CAF is now running at http://127.0.0.1:18110 with its actual form/client/worker.
+Two real joint HTTP journeys PASS: a new customer and an additional connection
+sharing lifetime Customer ID1000000000. Real plan proxy/reservation, approval scope,
+automatic delivery, durable hash acceptance and retry without duplication/reset
+verified. Both services remain STAGED/SUSPENDED; no internet activation.
+Maintained reproduction: scripts/test_joint_caf_demo.py; private safe outcome in
+.tools/integration-demo/joint-http-result.json. Owner checklist: working-demo.md.
+CAF demo runtime changes were still uncommitted at last inspection; request peer
+exact SHA rather than treating its e16ffaa safety baseline as the demo commit.
+Owner testing/acceptance is PENDING. Ask Vikas to test; await his feedback.
 
 Owner acceptance rule: after every testable milestone, ask Vikas to test with
 environment, exact safe steps and expected results; await feedback before marking
