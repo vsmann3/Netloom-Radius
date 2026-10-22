@@ -14,6 +14,7 @@
 <a class="side-link {% if section == 'subscribers' %}is-active{% endif %}" href="{% url 'company-users' tenant.company_id %}"><span aria-hidden="true">◎</span> Users / Subscribers</a>
 <a class="side-link {% if section == 'plans' %}is-active{% endif %}" href="{% url 'company-plans' tenant.company_id %}"><span aria-hidden="true">▤</span> Service plans</a>
 <a class="side-link {% if section == 'routers' %}is-active{% endif %}" href="{% url 'company-routers' tenant.company_id %}"><span aria-hidden="true">⌘</span> Routers / NAS</a>{% endif %}
+{% if tenant and membership.role == 'owner' %}<a class="side-link {% if section == 'caf-settings' %}is-active{% endif %}" href="{% url 'caf-connection-settings' tenant.company_id %}">CAF integration settings</a>{% endif %}
 <div class="sidebar-label mt-4">COMING NEXT</div>
 <span class="side-link unavailable">Franchises <span class="soon">Planned</span></span>
 <span class="side-link unavailable">Wallets &amp; settlements <span class="soon">Planned</span></span>

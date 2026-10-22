@@ -1,4 +1,4 @@
-"""Read-only CAF integration. No provisioning or activation is performed here."""
+"""Scoped CAF catalog and shared service authentication. No activation here."""
 
 import hashlib
 import re

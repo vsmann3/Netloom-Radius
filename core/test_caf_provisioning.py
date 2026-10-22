@@ -13,16 +13,29 @@ from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from .caf_catalog import issue_token, publish_plan
-from .models import (CAFCompanyBinding, CAFDeliveryReceipt, CAFCustomerLink, CAFFranchiseBinding,
+from .models import (CAFCompanyBinding, CAFConnection, CAFDeliveryReceipt, CAFCustomerLink, CAFFranchiseBinding,
                      CAFReservation, CAFServiceRequest, CAFServiceToken, Membership, Plan, Subscriber, Tenant)
 
 
-@override_settings(CAF_PROVISIONING_ENABLED=True, CAF_FINGERPRINT_KEYS={"v1": "ab" * 32}, CAF_FINGERPRINT_KEY_ID="v1")
+PRODUCTION_FIXTURE = dict(CAF_PRODUCTION_STAGED_ENABLED=True, CAF_PROVISIONING_ENABLED=True,
+    CAF_FINGERPRINT_KEYS={"v1": "ab" * 32}, CAF_FINGERPRINT_KEY_ID="v1",
+    CAF_CREDENTIAL_KEYS={"v1": "eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg="},
+    CAF_API_ALLOWED_ORIGINS=["https://caf.example.test"])
+
+
+@override_settings(**PRODUCTION_FIXTURE)
 class CAFProvisioningTests(TestCase):
     def setUp(self):
         self.tenant = Tenant.objects.create(slug="caf-demo", name="CAF Demo")
         self.binding = CAFCompanyBinding.objects.create(tenant=self.tenant, source="caf-portal", caf_company_id="company-a")
         self.franchise = CAFFranchiseBinding.objects.create(company=self.binding, caf_franchise_id="franchise-a", name="Test franchise")
+        # Existing protocol suite runs behind an explicit verified company gate.
+        from .caf_connections import fingerprint, seal_token
+        key_id, ciphertext = seal_token(self.binding, "https://caf.example.test", "fixture." + "x" * 40)
+        config = CAFConnection.objects.create(binding=self.binding, origin="https://caf.example.test",
+            token_ciphertext=ciphertext, encryption_key_id=key_id, staged_enabled=True, test_result="ok")
+        config.tested_fingerprint = fingerprint(config)
+        config.save()
         self.actor = get_user_model().objects.create_user("owner")
         Membership.objects.create(user=self.actor, tenant=self.tenant, role="owner")
         self.plan = Plan.objects.create(tenant=self.tenant, name="300 Mbps", download_kbps=300000, upload_kbps=300000)
@@ -88,6 +101,26 @@ class CAFProvisioningTests(TestCase):
                                HTTP_AUTHORIZATION="Bearer " + self.secret)
         self.assertEqual(read.json(), response.json())
         self.assertNotIn(body["service"]["initial_password"], str(list(CAFDeliveryReceipt.objects.values())))
+
+    def test_production_disable_blocks_new_writes_but_preserves_receipt_reconciliation(self):
+        body = self.bundle()
+        accepted = self.provision(body).json()
+        original = Subscriber.objects.get()
+        CAFConnection.objects.filter(binding=self.binding).update(staged_enabled=False)
+        self.assertEqual(self.provision(body).json()["error"]["code"], "staged_delivery_disabled")
+        receipt = self.client.get("/api/integrations/ecaf/v2/provisionings/" + body["provisioning_request_id"], secure=True,
+            HTTP_AUTHORIZATION="Bearer " + self.secret)
+        self.assertEqual(receipt.json(), accepted)
+        unchanged = Subscriber.objects.get()
+        self.assertEqual((original.password_hash, original.expires_at), (unchanged.password_hash, unchanged.expires_at))
+        self.assertEqual(Subscriber.objects.count(), 1)
+
+    def test_normal_mode_requires_both_server_and_verified_company_gates(self):
+        with override_settings(CAF_PRODUCTION_STAGED_ENABLED=False):
+            self.assertEqual(self.reserve().json()["error"]["code"], "staged_delivery_disabled")
+        CAFConnection.objects.filter(binding=self.binding).update(tested_fingerprint="changed")
+        self.assertEqual(self.reserve().status_code, 503)
+        self.assertFalse(CAFServiceRequest.objects.exists())
 
     def test_matching_retry_does_not_reset_radius_owned_password(self):
         body = self.bundle()
@@ -234,7 +267,7 @@ class CAFProvisioningTests(TestCase):
 
 
 @skipUnless(connection.vendor == "mysql", "MariaDB row-lock concurrency check")
-@override_settings(CAF_PROVISIONING_ENABLED=True, CAF_FINGERPRINT_KEYS={"v1": "ab" * 32}, CAF_FINGERPRINT_KEY_ID="v1")
+@override_settings(**PRODUCTION_FIXTURE)
 class CAFConcurrentProvisioningTests(TransactionTestCase):
     setUp = CAFProvisioningTests.setUp
     post = CAFProvisioningTests.post

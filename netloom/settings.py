@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "core",
 ]
 MIDDLEWARE = [
+    "core.middleware.TrustedHTTPSProxyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -93,3 +94,10 @@ CAF_FINGERPRINT_KEY_ID = os.environ.get("CAF_FINGERPRINT_KEY_ID", "v1")
 CAF_DEMO_LOCAL_HTTP = False  # Only the isolated demo settings module may enable this.
 CAF_FORM_URL = os.environ.get("CAF_FORM_URL", "")
 CAF_FORM_ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("CAF_FORM_ALLOWED_ORIGINS", "").split(",") if x.strip()]
+
+# Production STAGED is an independent gate; demo settings keep their isolation rules.
+CAF_PRODUCTION_STAGED_ENABLED = os.environ.get("CAF_PRODUCTION_STAGED_ENABLED", "false") == "true"
+CAF_API_ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("CAF_API_ALLOWED_ORIGINS", "").split(",") if x.strip()]
+CAF_CREDENTIAL_KEYS = json.loads(Path(os.environ["CAF_CREDENTIAL_KEYS_FILE"]).read_text()) if os.environ.get("CAF_CREDENTIAL_KEYS_FILE") else {}
+CAF_CREDENTIAL_KEY_ID = os.environ.get("CAF_CREDENTIAL_KEY_ID", "v1")
+CAF_API_CA_FILE = os.environ.get("CAF_API_CA_FILE") or None

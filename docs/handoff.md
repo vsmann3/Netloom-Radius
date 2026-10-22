@@ -2,6 +2,18 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+Production-STAGED implementation is authorized; work now on staging, keeping main
+at accepted/planning baseline5ff1bc9 pending owner review. New owner-only CAF
+integration settings, encrypted reciprocal read key, one-time expiring four-grant
+Radius keys, mappings/test/explicit enable, additive connection-status endpoint,
+normal per-company write gate, trusted-proxy HTTPS, migration0011, Compose secret
+overlay and preflight are implemented. See integrations/production-staged-settings.md.
+Separate normal-gate HTTPS fixture18220->18150 is running; CA and private login
+under ignored .tools/production-staged. CAF proxy18210->18160 awaits its own new
+backend. Existing18110/18120 demo stays unchanged. Joint production-mode exchange,
+MariaDB CI and owner acceptance remain pending. Do not infer activation authorization.
+
+
 Owner now requests a working CAF/Radius model, not more contract-only exchanges.
 Radius actual reservations, renewal, v2 provisioning/receipt, permanent customer
 links and customer-ID directory/form handoff implemented at157edcb, with migration

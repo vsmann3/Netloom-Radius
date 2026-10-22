@@ -282,3 +282,16 @@ class CAFDeliveryReceipt(TenantRecord):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["source", "operation", "delivery_id"], name="caf_delivery_once")]
+
+
+class CAFConnection(models.Model):
+    """Owner-managed reciprocal connection. Credentials never appear in projections."""
+    binding = models.OneToOneField(CAFCompanyBinding, on_delete=models.PROTECT, related_name="connection")
+    origin = models.URLField(max_length=256)
+    token_ciphertext = models.TextField(blank=True, editable=False)
+    encryption_key_id = models.CharField(max_length=64, blank=True, editable=False)
+    staged_enabled = models.BooleanField(default=False)
+    tested_fingerprint = models.CharField(max_length=64, blank=True, editable=False)
+    tested_at = models.DateTimeField(null=True, editable=False)
+    test_result = models.CharField(max_length=48, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)

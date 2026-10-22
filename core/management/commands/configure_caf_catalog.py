@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.caf_catalog import issue_token
+from core.caf_connections import GRANTS
 from core.models import AuditEvent, CAFCompanyBinding, Membership, Tenant
 
 
@@ -23,6 +24,7 @@ class Command(BaseCommand):
         parser.add_argument("--caf-company-id", required=True)
         parser.add_argument("--token-file", required=True)
         parser.add_argument("--expires-days", type=int, default=30)
+        parser.add_argument("--grant", action="append", choices=GRANTS, help="Repeat for explicit grants; default plans_read only")
 
     def handle(self, *args, **options):
         if not 1 <= options["expires_days"] <= 90:
@@ -50,7 +52,11 @@ class Command(BaseCommand):
                     source=options["source"], caf_company_id=external, defaults={"tenant": tenant})
                 if binding.tenant_id != tenant.pk or not binding.active:
                     raise CommandError("Binding conflicts with existing records; no remapping performed")
-                token, raw = issue_token(binding, expires_at=timezone.now() + timedelta(days=options["expires_days"]), plans_read=True)
+                grants = set(options.get("grant") or ["plans_read"])
+                token, raw = issue_token(binding, expires_at=timezone.now() + timedelta(days=options["expires_days"]), plans_read="plans_read" in grants)
+                for grant in GRANTS[1:]:
+                    setattr(token, grant, grant in grants)
+                token.save(update_fields=list(GRANTS[1:]))
                 # O_EXCL also refuses an existing symlink. On Windows the parent ACL
                 # must be protected separately; POSIX mode 0600 is set at creation.
                 descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -66,4 +72,4 @@ class Command(BaseCommand):
             if isinstance(exc, CommandError):
                 raise
             raise CommandError("CAF catalog setup failed; transaction rolled back and no token was printed") from exc
-        self.stdout.write(f"Created company-scoped plans:read token {token.pk}; secret written only to the requested file.")
+        self.stdout.write(f"Created company-scoped token {token.pk}; grants: {', '.join(sorted(grants))}; secret written only to the requested file.")
