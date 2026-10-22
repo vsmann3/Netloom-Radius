@@ -137,16 +137,16 @@ def connection_settings(request, company_id):
                     connection.save()
                     _audit(request, tenant, record.pk, "franchise_map", "saved")
                     notice = "Franchise mapped. Test again before enabling delivery."
-                elif action == "disable_franchise":
+                elif action in {"disable_franchise", "enable_franchise"}:
                     if not connection:
                         raise ValidationError("Connection required.")
                     record = get_object_or_404(CAFFranchiseBinding, company=binding, pk=request.POST.get("franchise_id"))
-                    record.active = False
+                    record.active = action == "enable_franchise"
                     record.save(update_fields=["active"])
                     reset_test(connection)
                     connection.save()
-                    _audit(request, tenant, record.pk, "franchise_disable", "disabled")
-                    notice = "Mapping disabled; no identity was deleted or reassigned."
+                    _audit(request, tenant, record.pk, "franchise_state", "enabled" if record.active else "disabled")
+                    notice = "Mapping state saved; identity preserved. Test again before enabling staged delivery."
                 elif action == "issue" and issue_form.is_valid():
                     if not binding or not binding.active:
                         raise ValidationError("An active company connection is required.")

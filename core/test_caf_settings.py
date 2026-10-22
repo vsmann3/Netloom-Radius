@@ -1,8 +1,11 @@
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import patch
 
 from cryptography.fernet import Fernet
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
@@ -159,6 +162,21 @@ class CAFSettingsTests(TestCase):
         self.assertFalse(cfg.staged_enabled)
         self.assertEqual(cfg.tested_fingerprint, "")
 
+    def test_franchise_reactivation_preserves_number_and_requires_retest(self):
+        cfg = self.configured()
+        self.successful_test()
+        self.client.post(self.url, {"action": "enable"})
+        mapping = CAFFranchiseBinding.objects.get()
+        number = mapping.franchise_id
+        self.client.post(self.url, {"action": "disable_franchise", "franchise_id": str(mapping.pk)})
+        self.client.post(self.url, {"action": "enable_franchise", "franchise_id": str(mapping.pk)})
+        mapping.refresh_from_db()
+        cfg.refresh_from_db()
+        self.assertTrue(mapping.active)
+        self.assertEqual(mapping.franchise_id, number)
+        self.assertFalse(cfg.staged_enabled)
+        self.assertEqual(cfg.tested_fingerprint, "")
+
     def test_foreign_directory_and_missing_franchise_fail_scope_verification(self):
         cfg = self.configured()
         for pages in ([[]], [[{"id": "foreign", "is_active": True}]],
@@ -205,6 +223,32 @@ class CAFSettingsTests(TestCase):
         self.client.post(self.url, body)
         plan.refresh_from_db()
         self.assertEqual(plan.cafplanpublication.version, 2)
+
+    def test_read_only_key_has_no_write_grant(self):
+        self.configured()
+        response = self.client.post(self.url, {"action": "issue", "expires_days": "1", "plans_read": "on"})
+        key = response.context["issued_key"]
+        response = self.client.post("/api/integrations/ecaf/v1/username-reservations", data="{}", content_type="application/json",
+                                    secure=True, HTTP_AUTHORIZATION="Bearer " + key)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"]["code"], "scope_denied")
+
+    def test_read_only_preflight_rejects_unverified_company_and_stale_publication(self):
+        self.configured()
+        with self.assertRaises(CommandError):
+            call_command("check_caf_staged", company_id=self.tenant.company_id, require_enabled=True, stdout=StringIO())
+        self.successful_test()
+        self.client.post(self.url, {"action": "enable"})
+        plan = Plan.objects.create(tenant=self.tenant, name="Pilot", upload_kbps=10, download_kbps=10)
+        self.client.post(self.url, {"action": "publish", "plan_id": str(plan.pk), "duration_seconds": "3600"})
+        output = StringIO()
+        call_command("check_caf_staged", company_id=self.tenant.company_id, require_enabled=True, stdout=output)
+        self.assertIn("eligible publications 1", output.getvalue())
+        plan.name += " "
+        plan.save()
+        with self.assertRaises(CommandError):
+            call_command("check_caf_staged", company_id=self.tenant.company_id, require_enabled=True, stdout=StringIO())
+        self.assertFalse(Subscriber.objects.exists())
 
     def test_trusted_proxy_produces_https_return_without_trusting_other_peers(self):
         self.configured()
