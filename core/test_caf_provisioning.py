@@ -122,6 +122,18 @@ class CAFProvisioningTests(TestCase):
                                     HTTP_AUTHORIZATION="Bearer " + self.secret)
         self.assertEqual(response.status_code, 400)
 
+    def test_canonical_key_order_retry_and_utf8_password_limit(self):
+        body = self.bundle()
+        too_long = copy.deepcopy(body)
+        too_long["service"]["initial_password"] = "Strong#123" + "\U0001f642" * 31
+        self.assertEqual(self.provision(too_long).json()["error"]["code"], "invalid_password")
+        first = self.provision(body)
+        reordered = dict(reversed(list(body.items())))
+        reordered["service"] = dict(reversed(list(body["service"].items())))
+        retried = self.post("/api/integrations/ecaf/v2/provisionings", {}, key=body["provisioning_request_id"], raw=json.dumps(reordered, indent=2))
+        self.assertEqual(retried.json(), first.json())
+        self.assertEqual(Subscriber.objects.count(), 1)
+
     def test_expired_reservation_receipt_allows_only_immutable_leaf_replacement(self):
         body = self.bundle()
         CAFReservation.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
