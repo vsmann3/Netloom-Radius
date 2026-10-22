@@ -12,7 +12,9 @@ class DashboardFormMixin:
         kwargs.setdefault("auto_id", self.__class__.__name__.lower() + "_%s")
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
+            field.widget.attrs["class"] = ("form-select" if isinstance(field.widget, forms.Select)
+                                           else "form-check-input" if isinstance(field.widget, forms.CheckboxInput)
+                                           else "form-control")
 
 
 class SubscriberFilterForm(DashboardFormMixin, forms.Form):

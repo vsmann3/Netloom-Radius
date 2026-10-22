@@ -215,3 +215,6 @@ class CAFSettingsTests(TestCase):
             self.assertIn("returnTo=https%3A%2F%2F", response["Location"])
             untrusted = self.client.get(url, REMOTE_ADDR="10.2.0.2", HTTP_X_FORWARDED_PROTO="https")
             self.assertIn("returnTo=http%3A%2F%2F", untrusted["Location"])
+        with override_settings(CAF_FORM_URL="https://other.example.test/caf/new",
+                               CAF_FORM_ALLOWED_ORIGINS=["https://other.example.test"]):
+            self.assertEqual(self.client.get(url, secure=True).status_code, 503)
