@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -85,3 +86,10 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 65536
 CAF_CATALOG_ENABLED = os.environ.get("CAF_CATALOG_ENABLED", "false") == "true"
 # Exact backend peer IPs only; trust no forwarded protocol header by default.
 CAF_CATALOG_PROXY_IPS = [x.strip() for x in os.environ.get("CAF_CATALOG_PROXY_IPS", "").split(",") if x.strip()]
+CAF_PROVISIONING_ENABLED = os.environ.get("CAF_PROVISIONING_ENABLED", "false") == "true"
+# A separate key ring, never Django's session-signing key. Empty disables writes.
+CAF_FINGERPRINT_KEYS = json.loads(Path(os.environ["CAF_FINGERPRINT_KEYS_FILE"]).read_text()) if os.environ.get("CAF_FINGERPRINT_KEYS_FILE") else {}
+CAF_FINGERPRINT_KEY_ID = os.environ.get("CAF_FINGERPRINT_KEY_ID", "v1")
+CAF_DEMO_LOCAL_HTTP = False  # Only the isolated demo settings module may enable this.
+CAF_FORM_URL = os.environ.get("CAF_FORM_URL", "")
+CAF_FORM_ALLOWED_ORIGINS = [x.strip() for x in os.environ.get("CAF_FORM_ALLOWED_ORIGINS", "").split(",") if x.strip()]

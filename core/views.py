@@ -11,11 +11,14 @@ from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.http import require_GET, require_POST
+from django.conf import settings
+from urllib.parse import urlencode, urlsplit
 
 from .models import AuditEvent, Membership, NAS, Plan, Subscriber, Tenant
 from .forms import NASForm, PlanForm, SubscriberForm, SubscriberFilterForm
 from .directories import filter_subscribers
 from .services import require_membership, suspend_subscriber
+from .models import CAFCompanyBinding
 
 
 @require_GET
@@ -49,6 +52,8 @@ def company(request, company_id=None, tenant_id=None, section="overview"):
     tenant_id = tenant.pk
     membership = require_membership(request.user, tenant_id, write=request.method == "POST")
     kind = request.POST.get("kind") if request.method == "POST" else None
+    if kind == "subscriber" and getattr(settings, "CAF_FORM_URL", ""):
+        return JsonResponse({"error": "Use the CAF onboarding form for new customers"}, status=409)
     plan_form = PlanForm(request.POST if kind == "plan" else None, tenant_id=tenant_id)
     subscriber_form = SubscriberForm(request.POST if kind == "subscriber" else None, tenant_id=tenant_id)
     nas_form = NASForm(request.POST if kind == "nas" else None)
@@ -79,7 +84,7 @@ def company(request, company_id=None, tenant_id=None, section="overview"):
     query.pop("page", None)
     filter_data = {"sort": "username", "per_page": "50", **query.dict()}
     filter_form = SubscriberFilterForm(filter_data, tenant_id=tenant_id)
-    records = Subscriber.objects.filter(tenant_id=tenant_id).select_related("plan")
+    records = Subscriber.objects.filter(tenant_id=tenant_id).select_related("plan", "caf_request__customer_link")
     total_subscribers = records.count()
     if section == "subscribers":
         records = filter_subscribers(records, filter_form.cleaned_data) if filter_form.is_valid() else records.none()
@@ -90,6 +95,8 @@ def company(request, company_id=None, tenant_id=None, section="overview"):
     advanced_fields = ["expiry_from", "expiry_to", "created_from", "created_to", "renewal_from", "renewal_to", "renewal_record"]
     return render(request, {"overview": "company.html", "subscribers": "users.html", "plans": "plans.html", "routers": "routers.html"}[render_section], {
         "section": render_section, "filter_form": filter_form, "filter_query": query.urlencode(),
+        "caf_onboarding": bool(getattr(settings, "CAF_FORM_URL", "")),
+        "integration_demo": getattr(settings, "CAF_DEMO_LOCAL_HTTP", False),
         "primary_filters": [filter_form[name] for name in ["account_id", "username", "status", "validity", "plan", "sort", "per_page"]],
         "advanced_filters": [filter_form[name] for name in advanced_fields],
         "advanced_open": any(filter_form[name].value() for name in advanced_fields),
@@ -107,6 +114,27 @@ def company(request, company_id=None, tenant_id=None, section="overview"):
         "records": Paginator(records, per_page).get_page(request.GET.get("page")),
         "plan_form": plan_form, "subscriber_form": subscriber_form, "nas_form": nas_form,
     })
+
+
+@login_required
+@require_GET
+def caf_onboard(request, company_id):
+    tenant = get_object_or_404(Tenant, company_id=company_id, active=True)
+    require_membership(request.user, tenant.pk, write=True)
+    base = getattr(settings, "CAF_FORM_URL", "")
+    target = urlsplit(base)
+    origin = f"{target.scheme}://{target.netloc}"
+    allowed = getattr(settings, "CAF_FORM_ALLOWED_ORIGINS", [])
+    if not base or origin not in allowed or target.query or target.fragment or target.username or target.password:
+        return JsonResponse({"error": "CAF onboarding destination is not configured"}, status=503)
+    if target.scheme != "https" and not (getattr(settings, "CAF_DEMO_LOCAL_HTTP", False) and target.hostname in {"127.0.0.1", "localhost"}):
+        return JsonResponse({"error": "CAF requires a trusted HTTPS destination"}, status=503)
+    binding = CAFCompanyBinding.objects.filter(tenant=tenant, active=True).first()
+    if not binding:
+        return JsonResponse({"error": "CAF company binding required"}, status=503)
+    # Prefill only. CAF must enforce its own signed-in actor's company/franchise scope.
+    return redirect(base + "?" + urlencode({"companyId": binding.caf_company_id,
+        "returnTo": request.build_absolute_uri(reverse("company-users", args=[tenant.company_id]))}))
 
 
 @login_required

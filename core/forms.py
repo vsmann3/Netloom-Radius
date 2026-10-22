@@ -1,6 +1,8 @@
 from django import forms
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+import re
+import uuid
 
 from .models import NAS, Plan, Subscriber
 
@@ -14,7 +16,7 @@ class DashboardFormMixin:
 
 
 class SubscriberFilterForm(DashboardFormMixin, forms.Form):
-    account_id = forms.UUIDField(required=False, label="Account ID", help_text="Exact subscriber account UUID")
+    account_id = forms.CharField(required=False, label="Customer / Account ID", help_text="10-digit CAF customer ID, or legacy service UUID")
     username = forms.CharField(required=False, max_length=64, label="Username contains")
     status = forms.ChoiceField(required=False, choices=[("", "Any status"), ("active", "Active"), ("suspended", "Suspended")])
     validity = forms.ChoiceField(required=False, choices=[("", "Any expiry"), ("valid", "Not expired"), ("expired", "Expired"), ("expiring", "Expires in next 7 days")])
@@ -32,6 +34,17 @@ class SubscriberFilterForm(DashboardFormMixin, forms.Form):
     def __init__(self, *args, tenant_id, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["plan"].queryset = Plan.objects.filter(tenant_id=tenant_id).order_by("name")
+
+    def clean_account_id(self):
+        value = self.cleaned_data.get("account_id")
+        if not value:
+            return None
+        if re.fullmatch(r"[1-9][0-9]{9}", value):
+            return value
+        try:
+            return uuid.UUID(value)
+        except ValueError:
+            raise forms.ValidationError("Use a 10-digit CAF customer ID or exact service UUID.")
 
     def clean(self):
         data = super().clean()

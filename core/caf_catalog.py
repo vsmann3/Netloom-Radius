@@ -85,29 +85,28 @@ def plans(request, radius_company_id):
         return _error("temporarily_unavailable", 503, "Catalog temporarily unavailable", retryable=True)
 
 
-def _plans(request, radius_company_id):
-    if not settings.CAF_CATALOG_ENABLED:
-        return _error("integration_disabled", 503, "CAF catalog integration is disabled")
-    if request.method != "GET":
-        return _error("method_not_allowed", 405, "Use GET")
+def authenticate(request, grant, *, enabled):
+    if not enabled:
+        return None, _error("integration_disabled", 503, "CAF integration is disabled")
     # The proxy must overwrite this header and the web port must be private.
     trusted_https = (request.META.get("REMOTE_ADDR") in settings.CAF_CATALOG_PROXY_IPS
                      and request.headers.get("X-Forwarded-Proto") == "https")
-    if not request.is_secure() and not trusted_https:
-        return _error("https_required", 400, "HTTPS is required")
+    demo_http = getattr(settings, "CAF_DEMO_LOCAL_HTTP", False) and request.META.get("REMOTE_ADDR") in {"127.0.0.1", "::1"}
+    if not request.is_secure() and not trusted_https and not demo_http:
+        return None, _error("https_required", 400, "HTTPS is required")
     header = request.headers.get("Authorization", "")
     match = re.fullmatch(r"Bearer nlcaf_([0-9a-f]{32})\.([A-Za-z0-9_-]{43})", header)
     if not match:
-        return _error("invalid_token", 401, "Valid service authentication required")
+        return None, _error("invalid_token", 401, "Valid service authentication required")
     token = CAFServiceToken.objects.select_related("binding__tenant").filter(pk=uuid.UUID(hex=match[1])).first()
     digest = hashlib.sha256(match[2].encode("ascii")).hexdigest()
     if token is None or not secrets.compare_digest(token.secret_digest, digest) or not token.active or token.expires_at <= timezone.now():
-        return _error("invalid_token", 401, "Valid service authentication required")
+        return None, _error("invalid_token", 401, "Valid service authentication required")
     binding = token.binding
     if not binding.active or not binding.tenant.active:
-        return _error("invalid_token", 401, "Valid service authentication required")
-    if not token.plans_read:
-        return _error("scope_denied", 403, "plans:read grant required")
+        return None, _error("invalid_token", 401, "Valid service authentication required")
+    if not getattr(token, grant):
+        return None, _error("scope_denied", 403, "Required service operation grant missing")
     window = int(timezone.now().timestamp()) // 60
     with transaction.atomic():
         quota = CAFServiceToken.objects.select_for_update().get(pk=token.pk)
@@ -116,9 +115,19 @@ def _plans(request, radius_company_id):
         if quota.rate_count >= 60:
             response = _error("rate_limited", 429, "Service token request limit reached", retryable=True)
             response["Retry-After"] = str(60 - int(timezone.now().timestamp()) % 60)
-            return response
+            return None, response
         quota.rate_count += 1
         quota.save(update_fields=["rate_window", "rate_count"])
+    return token, None
+
+
+def _plans(request, radius_company_id):
+    if request.method != "GET":
+        return _error("method_not_allowed", 405, "Use GET")
+    token, error = authenticate(request, "plans_read", enabled=settings.CAF_CATALOG_ENABLED)
+    if error is not None:
+        return error
+    binding = token.binding
     company_id = str(binding.tenant.company_id)
     if radius_company_id != company_id:
         return _error("not_found", 404, "Scoped company not found")

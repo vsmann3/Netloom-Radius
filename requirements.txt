@@ -6,3 +6,11 @@ gunicorn==26.2.0
 packaging==26.2
 mysqlclient==2.3.0
 whitenoise==6.12.0
+
+# Shared CAF wire validation and canonical replay fingerprints
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==2026.9.1
+attrs==26.1.0
+rfc8785==0.1.4

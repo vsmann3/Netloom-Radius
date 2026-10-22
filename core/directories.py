@@ -6,7 +6,8 @@ from django.utils import timezone
 def filter_subscribers(records, filters):
     """Apply validated directory filters to an already tenant-scoped queryset."""
     if filters.get("account_id"):
-        records = records.filter(pk=filters["account_id"])
+        value = filters["account_id"]
+        records = records.filter(caf_request__customer_id=value) if isinstance(value, str) else records.filter(pk=value)
     if filters.get("username"):
         records = records.filter(username__icontains=filters["username"])
     if filters.get("status"):

@@ -179,6 +179,9 @@ class CAFServiceToken(models.Model):
     # High-entropy random bearer secret; only its SHA-256 digest is stored.
     secret_digest = models.CharField(max_length=64, editable=False)
     plans_read = models.BooleanField(default=False)
+    reservations_write = models.BooleanField(default=False)
+    provisionings_write = models.BooleanField(default=False)
+    receipts_read = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,3 +206,79 @@ class CAFPlanPublication(models.Model):
             models.CheckConstraint(condition=Q(duration_seconds__gte=1), name="caf_plan_positive_duration"),
             models.CheckConstraint(condition=Q(upload_kbps__gte=1) & Q(download_kbps__gte=1), name="caf_plan_positive_rates"),
         ]
+
+
+class CAFFranchiseBinding(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey(CAFCompanyBinding, on_delete=models.PROTECT)
+    caf_franchise_id = models.CharField(max_length=128)
+    franchise_id = models.PositiveBigIntegerField(unique=True, default=next_organization_number, editable=False)
+    name = models.CharField(max_length=160)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["company", "caf_franchise_id"], name="caf_franchise_mapping_unique")]
+
+
+class CAFCustomerLink(TenantRecord):
+    source = models.SlugField(max_length=64)
+    binding = models.ForeignKey(CAFCompanyBinding, on_delete=models.PROTECT)
+    franchise = models.ForeignKey(CAFFranchiseBinding, on_delete=models.PROTECT)
+    customer_id = models.CharField(max_length=10, validators=[RegexValidator(r"\A[1-9][0-9]{9}\Z")])
+    profile_version = models.PositiveBigIntegerField(default=0)
+    profile = models.JSONField(default=dict)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source", "customer_id"], name="caf_lifetime_customer_unique")]
+
+
+class CAFServiceRequest(TenantRecord):
+    source = models.SlugField(max_length=64)
+    binding = models.ForeignKey(CAFCompanyBinding, on_delete=models.PROTECT)
+    franchise = models.ForeignKey(CAFFranchiseBinding, on_delete=models.PROTECT)
+    service_request_id = models.UUIDField()
+    customer_id = models.CharField(max_length=10)
+    username = models.CharField(max_length=64)
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
+    plan_version = models.PositiveBigIntegerField()
+    customer_link = models.ForeignKey(CAFCustomerLink, on_delete=models.PROTECT, null=True)
+    subscriber = models.OneToOneField(Subscriber, on_delete=models.PROTECT, null=True, related_name="caf_request")
+    credential_accepted = models.BooleanField(default=False)
+    state = models.CharField(max_length=32, default="reserved")
+    approval_event_id = models.UUIDField(null=True)
+    activated_at = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source", "service_request_id"], name="caf_service_request_unique")]
+
+
+class CAFUsernameClaim(models.Model):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    normalized_username = models.CharField(max_length=64)
+    request = models.OneToOneField(CAFServiceRequest, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["tenant", "normalized_username"], name="caf_username_claim_unique")]
+
+
+class CAFReservation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request = models.ForeignKey(CAFServiceRequest, on_delete=models.PROTECT)
+    expires_at = models.DateTimeField()
+
+
+class CAFDeliveryReceipt(TenantRecord):
+    source = models.SlugField(max_length=64)
+    binding = models.ForeignKey(CAFCompanyBinding, on_delete=models.PROTECT)
+    operation = models.CharField(max_length=32)
+    delivery_id = models.UUIDField()
+    request = models.ForeignKey(CAFServiceRequest, on_delete=models.PROTECT, null=True)
+    fingerprint = models.CharField(max_length=64)
+    binding_fingerprint = models.CharField(max_length=64, blank=True)
+    key_id = models.CharField(max_length=64)
+    response = models.JSONField(default=dict)
+    http_status = models.PositiveIntegerField(default=202)
+    predecessor = models.OneToOneField("self", on_delete=models.PROTECT, null=True, related_name="successor")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source", "operation", "delivery_id"], name="caf_delivery_once")]
