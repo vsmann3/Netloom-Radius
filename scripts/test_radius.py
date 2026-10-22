@@ -155,7 +155,14 @@ def main():
 
             db_query("root", "db_root_password", "GRANT ALL PRIVILEGES ON test_netloom.* TO 'netloom_migrate'@'%'")
             try:
-                compose("run", "--rm", "--no-deps", "migrate", "python", "manage.py", "test", "core", "--noinput", "-v", "1")
+                test_result = compose("run", "--rm", "--no-deps", "migrate", "python", "manage.py", "test", "core", "--noinput", "-v", "1")
+                # Surface only this bounded, non-sensitive SQL evidence line;
+                # keep full fixture/test output captured as before.
+                markers = [line for line in test_result.stdout.splitlines() if re.fullmatch(
+                    r"CAF catalog exact-name SQL regression PASS: collation=[A-Za-z0-9_]+; case/trailing spaces, pagination and republish versions", line)]
+                if len(markers) != 1:
+                    raise RuntimeError("Missing MariaDB catalog exact-name regression evidence")
+                print(markers[0], flush=True)
             finally:
                 db_query("root", "db_root_password", "REVOKE ALL PRIVILEGES ON test_netloom.* FROM 'netloom_migrate'@'%'")
             print("PASS: Django isolation tests against MariaDB", flush=True)
