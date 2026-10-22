@@ -64,7 +64,7 @@ IP/mode/network changes) use Radius permissions/audit and sync read-only summari
 to CAF. No pending KYC revision is created for those operational changes.
 
 New/unapproved accounts remain without internet until initial CAF approval, as
-already confirmed. The two open policies concern later changes, not initial access.
+already confirmed. The one open policy concerns later changes, not initial access.
 
 ## API expansion after agreement
 

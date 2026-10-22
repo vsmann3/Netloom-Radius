@@ -2,6 +2,12 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+User requested one self-contained handoff for the separate CAF Codex developer.
+Canonical CAF-RADIUS-TEAM-HANDOFF.md at the repository root consolidates confirmed
+decisions, both journeys, entity/field ownership, APIs/schemas, current gaps, the
+single unresolved KYC-access question and a coordination/paste prompt. Use it as
+the peer's starting point rather than asking the user to repeat the discussion.
+
 User clarified approval scope: ONLY edits to basic customer/KYC information (such
 as name/full name and CAF-required KYC fields) require CAF review. Radius is free
 to manage credentials, plans, IP/network, billing and renewals under its own scoped
