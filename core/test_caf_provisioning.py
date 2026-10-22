@@ -3,10 +3,13 @@ import json
 import uuid
 from datetime import timedelta
 from unittest.mock import patch
+from unittest import skipUnless
+from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, make_password
-from django.test import TestCase, override_settings
+from django.db import close_old_connections, connection, connections
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from .caf_catalog import issue_token, publish_plan
@@ -216,3 +219,33 @@ class CAFProvisioningTests(TestCase):
         self.assertTrue(response["Location"].startswith("http://127.0.0.1:18110/caf/new?companyId=company-a&returnTo="))
         Membership.objects.filter(user=self.actor).update(role="viewer")
         self.assertEqual(self.client.get(f"/companies/{self.tenant.company_id}/onboard/").status_code, 403)
+
+
+@skipUnless(connection.vendor == "mysql", "MariaDB row-lock concurrency check")
+@override_settings(CAF_PROVISIONING_ENABLED=True, CAF_FINGERPRINT_KEYS={"v1": "ab" * 32}, CAF_FINGERPRINT_KEY_ID="v1")
+class CAFConcurrentProvisioningTests(TransactionTestCase):
+    setUp = CAFProvisioningTests.setUp
+    post = CAFProvisioningTests.post
+    reserve = CAFProvisioningTests.reserve
+    bundle = CAFProvisioningTests.bundle
+
+    def test_concurrent_deliveries_accept_only_one_credential_and_service(self):
+        original = self.bundle()
+        other = copy.deepcopy(original)
+        other["provisioning_request_id"] = str(uuid.uuid4())
+
+        def deliver(body):
+            close_old_connections()
+            try:
+                return Client().post("/api/integrations/ecaf/v2/provisionings", data=json.dumps(body),
+                    content_type="application/json", secure=True, HTTP_AUTHORIZATION="Bearer " + self.secret,
+                    HTTP_IDEMPOTENCY_KEY=body["provisioning_request_id"]).status_code
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            statuses = list(workers.map(deliver, [original, other]))
+        self.assertEqual(sorted(statuses), [202, 409])
+        self.assertEqual(Subscriber.objects.count(), 1)
+        self.assertEqual(CAFDeliveryReceipt.objects.filter(operation="provisionings-v2").count(), 1)
+        self.assertTrue(CAFServiceRequest.objects.get().credential_accepted)
