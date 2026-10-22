@@ -4,6 +4,14 @@ Read `CAF-RADIUS-TEAM-HANDOFF.md` and `docs/handoff.md` before integration work.
 Own Radius application changes here; the CAF developer owns the CAF repository.
 Do not overwrite the other developer's working tree.
 
+## Owner acceptance testing
+
+Vikas requires a test request after every testable feature or fix. Run automated
+checks first, then give him the exact environment/URL, prerequisites, safe steps,
+expected results and remaining limitations. Clearly distinguish source/CI, deployed
+readiness and owner acceptance. Await his feedback before marking the milestone
+accepted. Do not deploy or enable features merely to answer a readiness question.
+
 ## Direct teammate coordination
 
 The owner authorized the two local Codex developers to communicate directly.

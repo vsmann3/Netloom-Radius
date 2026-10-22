@@ -2,6 +2,20 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+Owner acceptance rule: after every testable milestone, ask Vikas to test with
+environment, exact safe steps and expected results; await feedback before marking
+accepted. Source/CI success is not deployment or owner acceptance.
+
+Latest read-only deployment check: VM /srv/netloom/production HEAD is
+1e57699715fbaff7253e46ca11f122b8084ad5f9 with clean git status. Public health returns
+200/ok; login returns 200 with Tabler assets; users/plans/routers directory routes
+redirect anonymous requests to login. The new CAF catalog endpoint returns 404.
+Running-container/image revision could not be independently inspected because
+sudo requires an interactive password. Do not equate checkout HEAD with verified
+running-image SHA. Authenticated company data/UI were not inspected in this check.
+Catalog source commits 8fadd0b/1feb9ee/e9d0e9b/5be76a6 and their CI success do not
+establish deployment; no deployment or enabling was performed by this status check.
+
 Owner resumed both developers after the coordination checkpoint. CAF was notified
 directly. Reviewed CAF 36a5747 / Radius draft PR 1 and reran all 38 offline contract
 tests successfully. PR 1 remains unmerged and activation policy unresolved.
