@@ -13,6 +13,8 @@ _guards = importlib.import_module("core.migrations.0009_caf_immutable_bindings")
 
 class Migration(migrations.Migration):
 
+    atomic = False  # MariaDB trigger DDL cannot execute inside an atomic block.
+
     dependencies = [
         ('core', '0009_caf_immutable_bindings'),
     ]
