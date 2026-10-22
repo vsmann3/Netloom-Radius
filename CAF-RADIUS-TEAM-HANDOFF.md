@@ -215,8 +215,9 @@ implemented/accepted. Do not equate design scope with shipped features.
    “done” messages without compatibility evidence.
 6. Never mark the peer API ready without a tested implementation and credentials/
    scopes configured outside Git. Do not enable fake-success adapters.
-7. A shared handoff does not connect two running Codex sessions automatically.
-   Coordinate through this file, contract PRs and the owner's relay when necessary.
+7. Direct local Codex messaging is authorized. Follow `docs/local-agent-coordination.md`
+   and notify the peer of interface changes, milestones and blockers. Queue acceptance
+   is not acknowledgement; keep contract decisions in this file and PRs.
 
 ### Initial ownership checklist
 
