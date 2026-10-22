@@ -2,6 +2,12 @@
 
 ## Management increment - 2026-10-22
 
+The `onboard_companies` management command previews or atomically creates company
+tenants and explicit owner memberships for an existing active panel superuser.
+It rejects conflicting/inactive records and preserves credentials. Six tests cover
+preview, repeat application, permission checks, invalid input, conflicts and audit
+rollback. Local suite: 37 tests, 32 passed and 5 MariaDB-only skipped.
+
 Local company pages now list plans/subscribers and allow owners/operators to create
 them with atomic audit records. Viewer access is read-only; plan selection and
 records are tenant-scoped. New credentials are disabled until the existing password

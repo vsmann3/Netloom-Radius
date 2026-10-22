@@ -2,6 +2,23 @@
 
 ## Latest confirmed direction - 2026-10-22
 
+Company names confirmed: Infolink Broadband, NorthNet and VM Net. Proposed tenant
+slugs are in product-direction.md. Pilot choice and owner memberships remain pending;
+no live company records have been created from these names yet.
+
+Management revision c394450 passed all GitHub checks, including MariaDB/FreeRADIUS:
+https://github.com/vsmann3/Netloom-Radius/actions/runs/39706076821.
+A deployment helper is staged at /home/jarvis/netloom-deploy-management-c394450.sh
+on the VM. The user confirmed successful deployment of c394450, Django checks and
+health status ok. Pre-update backup: backups/netloom-20261022T013641Z.sql.gz;
+off-VM backup and restore are still unverified.
+
+The user authorized onboarding all three companies with their existing panel
+account. A new onboard_companies command supports preview then explicit --apply,
+atomic audited creation and idempotent owner membership grants. Do not assume the
+panel username is jarvis. SSH sudo remains password-protected, so live inspection
+and onboarding require console execution. See company-onboarding.md.
+
 The user confirmed proceeding with Django for their own three companies first,
 with multiple franchises and full wallet/recharge/commission/revenue-sharing needs.
 Later offer the proven software to fellow ISPs. See [product direction](product-direction.md).

@@ -6,6 +6,17 @@ components where useful; keep upstream FreeRADIUS unchanged.
 
 ## Purpose and boundaries
 
+Confirmed company names:
+
+| Company | Proposed tenant slug |
+| --- | --- |
+| Infolink Broadband | `infolink-broadband` |
+| NorthNet | `northnet` |
+| VM Net | `vm-net` |
+
+The first pilot company and owner memberships are not yet specified. These names
+are onboarding requirements, not confirmation that live tenants have been created.
+
 Operate the user's three companies first. Each company is a tenant with separate
 subscribers, NAS registrations, plans, staff permissions and finances. Central staff
 may receive explicit memberships across companies; no implicit superuser access.
