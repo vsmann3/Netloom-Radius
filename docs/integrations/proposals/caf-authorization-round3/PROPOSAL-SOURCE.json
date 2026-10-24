@@ -1,0 +1,159 @@
+{
+  "caf_repository": "vsmann3/caf-portal",
+  "caf_commit": "36a574765bf4598e771f15e0daad3b5392d8918f",
+  "radius_base_commit": "4a103dc3947bc12fecba5da1dad842e3e56be336",
+  "files": [
+    {
+      "file": ".gitattributes",
+      "sha256": "9e8f041ed812cb5288282cc6b187de804e96b688d56647fdae181c49fec71863"
+    },
+    {
+      "file": "README.md",
+      "sha256": "78c018a2810b7f775ee8d8e364307d55e5cdcb6f0e962e02bbf8647e682173b8"
+    },
+    {
+      "file": "ROUND2-RESPONSE.md",
+      "sha256": "e8d8ad80b5b462c2ae9990623cdfe27a84b009572308a1cdafbdf9943c1ad27d"
+    },
+    {
+      "file": "ROUND3-AUTHORIZATION.md",
+      "sha256": "f2f210b493bf2d862599d90d656e8b56ae2c5ea44c69f9d72363e520f6d041fb"
+    },
+    {
+      "file": "VALIDATION.md",
+      "sha256": "3f05d0b36ac4f18421eae1f4bbb9dbaab2a10ec65c38d4171bdbd650983405bf"
+    },
+    {
+      "file": "activation-authorization.proposed.schema.json",
+      "sha256": "a84a6e677799ce0229b78f5181d03965c9d6e722c74a195d1fe78cdbc6b104fa"
+    },
+    {
+      "file": "directory.proposed.schema.json",
+      "sha256": "f133b96472399b05c61f00eb9efef6a05c3386c6d4b7e875ae062d59caa12c10"
+    },
+    {
+      "file": "examples/authorization/authorized.example.json",
+      "sha256": "f26a3f60a9ebcc2e58be305c50a40947cff5076b4ae54ce47b2b399aea01d854"
+    },
+    {
+      "file": "examples/authorization/denied-after-withdrawal.example.json",
+      "sha256": "ff2dbf6b3d0907e49526362c1ff106992a1735a691f899b9895afbf55dfc81e1"
+    },
+    {
+      "file": "examples/authorization/ordering-cases.example.json",
+      "sha256": "69f487a8c84ddf62e0d9c52880a84919fe7c8b0291879a23263d925906d50535"
+    },
+    {
+      "file": "examples/authorization/request.example.json",
+      "sha256": "8e854898cb63fc16e88e004b85dde49df90a3fca6e0d1b56e27897564416bbeb"
+    },
+    {
+      "file": "examples/authorization/retention.example.json",
+      "sha256": "a6a77efffcb8feda32da7d783a10723873458aaeac89bf6c5fece965381f99d0"
+    },
+    {
+      "file": "examples/authorization/withdrawal-after-authorization.example.json",
+      "sha256": "252141ba2b22c39271b86ade30aef0e9d071f8e834d3cfdadc74ed2559d26a6d"
+    },
+    {
+      "file": "examples/authorization/withdrawal-before-authorization.example.json",
+      "sha256": "0c84ca6e7dae6763dff00bdea28eb4183b5ba4cbeeec7a3fc872643e0f323e20"
+    },
+    {
+      "file": "examples/round2/accepted-setup-failed.example.json",
+      "sha256": "d8621510f63c313890ac2d3d59904fe70ddf6e11f3b2beb496817321c9264bf1"
+    },
+    {
+      "file": "examples/round2/applications.example.json",
+      "sha256": "2281328e3896c19585c4c1fb9de67b334d6b5129b515ed34f27cf9fbc451a000"
+    },
+    {
+      "file": "examples/round2/approval-a.example.json",
+      "sha256": "bb42ce50552aed33df2d78d6d23fa31fea78b3a8c9a4109306f12f87b0ca1ad3"
+    },
+    {
+      "file": "examples/round2/approval-b.example.json",
+      "sha256": "d8f082bd2d5e909cd321deb84263b88b1e4cd254c5f5c2cdc5fb1f5554aeb7ca"
+    },
+    {
+      "file": "examples/round2/bootstrap-empty.example.json",
+      "sha256": "b33206a6a53ecfbf117e2c666de815b7880fbeb15d7e6b52fbcd6fef516656a5"
+    },
+    {
+      "file": "examples/round2/bootstrap-page.example.json",
+      "sha256": "531e1d12c66be8b09538238ce162adff8702bfa90786dc6248ae2a46a91ce553"
+    },
+    {
+      "file": "examples/round2/bootstrap-start.example.json",
+      "sha256": "6dec0dc3e9fe1f1c152d02e17ee3480a5a4bbaf6f5f6a0b4552da018f198579e"
+    },
+    {
+      "file": "examples/round2/cursor-expired.example.json",
+      "sha256": "d08c1e7e58b6ee4541b787dad26cc2e8fdd685ee9ca4a72c15d7eff641d87e30"
+    },
+    {
+      "file": "examples/round2/customer-master.example.json",
+      "sha256": "ce1a729615e3218c40b2f505fc3384d05825c94f6a797be5c2b8f6293915ba04"
+    },
+    {
+      "file": "examples/round2/negative-cases.json",
+      "sha256": "3261376b084bb182d4a9d7704829a9a61254dffa251e8bea43040fffff57a4be"
+    },
+    {
+      "file": "examples/round2/plans.example.json",
+      "sha256": "67cb889dcecbfff16590edd993c9bdc7b6aac987c6aeb5d4043263b268b16e48"
+    },
+    {
+      "file": "examples/round2/provisioning-v2.example.json",
+      "sha256": "82f0e3e66d7b2c894a59a8ff595a1d77418c028f94bd2e851591ddc227642fd3"
+    },
+    {
+      "file": "examples/round2/replacement-reservation.example.json",
+      "sha256": "0c9961fcf693ef6fab5c9174ae8047f9dd94ba5443d62d31dcd09d4eb419090f"
+    },
+    {
+      "file": "examples/round2/replacement-v2.example.json",
+      "sha256": "6d267bb650813ad85da5c96e1aade13517d7e2676ec6ca1563a8addfd9c66656"
+    },
+    {
+      "file": "examples/round2/reservation.example.json",
+      "sha256": "598e907a6edd393f3afe7d65192cf353e7cb679f6a7c2a4439c24f29b1066f8b"
+    },
+    {
+      "file": "examples/round2/unaccepted-expired-v2.example.json",
+      "sha256": "a0c74f76877a2b31fa5dddf6ef3cbd5dd638d9bf4d70135e826c8b78e6db566d"
+    },
+    {
+      "file": "examples/round2/unapproved-customer.example.json",
+      "sha256": "0b9b70c06a8b6af75d16609a2d1a7fda38051a59707207679fc5347a078239d0"
+    },
+    {
+      "file": "examples/round2/withdrawn-a.example.json",
+      "sha256": "f0d2cb4744873c26ef26d66e5cd53928903735d9acbb15eeee9ea1612803a1b6"
+    },
+    {
+      "file": "reference/SOURCE.json",
+      "sha256": "5554db5e98e17b6cdfca1687c2b770a92aebb3050913b0de513ab44147ee07c9"
+    },
+    {
+      "file": "reference/ecaf-event.example.json",
+      "sha256": "7811eedca6efe52c3b5c0a100a7328e6abac556b4d18a8d97828b12a31140287"
+    },
+    {
+      "file": "reference/ecaf-event.schema.json",
+      "sha256": "4c846e4bd14472c7399e44da88f41b384a24f1dcf33969c875b805db93f6ce8d"
+    },
+    {
+      "file": "reference/ecaf-provisioning.example.json",
+      "sha256": "c40e3ddf921838a0fb75e24dd87c8c4e2b55859b0989ac4b8c0c728b14323448"
+    },
+    {
+      "file": "reference/ecaf-provisioning.schema.json",
+      "sha256": "b02c2ab8b76e404985b074577a8d52c3f46c38b91a2d90071516937f496c2eb7"
+    },
+    {
+      "file": "round2.proposed.schema.json",
+      "sha256": "cf2ba1f0d04596a3db3e2105cd364067f90e33dfacedd85e9d06be36c531e604"
+    }
+  ]
+}
